@@ -1,0 +1,9 @@
+nSleep RA 17 - P1.0
+nFault RA 18 - P1.1
+DIR    RA 20 - P1.2
+STEP   RA 22 -  P1.3
+
+nSleep DEC 17 - P1.4
+nFault DEC 18 - P1.5
+DIR    DEC 20 - P1.6
+STEP   DEC 22 -  P1.7

@@ -1,0 +1,13 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP 4081
+D Quad And 2 inputs
+K CMOS And2
+$ENDCMP
+#
+$CMP RJ12
+D RJ12 connector with 2 shield pins
+K RJ12 connector
+$ENDCMP
+#
+#End Doc Library

@@ -1,0 +1,5 @@
+Version
+
+2.0 	Renommer les empreintes selon nouvelle procédure
+2.1	TSC suppression de la couche top
+	Redimensionnement texte 1 sur 1,5 épaisseur 0,2

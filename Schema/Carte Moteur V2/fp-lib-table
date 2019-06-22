@@ -1,0 +1,5 @@
+(fp_lib_table
+  (lib (name base_V2)(type Legacy)(uri "$(KIPRJMOD)/BASE_V2/base_V2.mod")(options "")(descr ""))
+  (lib (name Carte_Principale)(type KiCad)(uri "$(KIPRJMOD)/Carte_Principale.pretty")(options "")(descr ""))
+  (lib (name "Carte Mere")(type KiCad)(uri "C:/Users/DIETRICHT_ELEC/Desktop/Diplome_Telescope_Dietrich_V8/Kicad_Telescope_V6/Carte Mere/Carte Mere.pretty")(options "")(descr ""))
+)

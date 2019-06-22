@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name Carte_Temperature)(type KiCad)(uri "$(KIPRJMOD)/Carte_Temperature.pretty")(options "")(descr ""))
+  (lib (name base_V2)(type Legacy)(uri "$(KIPRJMOD)/BASE_V2/base_V2.mod")(options "")(descr ""))
+)

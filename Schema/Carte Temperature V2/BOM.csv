@@ -1,0 +1,82 @@
+Source:;C:/Users/DIETRICHT_ELEC/Desktop/Diplome_Telescope_Dietrich_V17/Kicad_Telescope_V6/Carte Temperature V2/Carte_Temperature.sch;;;;;
+Date:;24.05.2019 10:35;;;;;
+Tool:;Eeschema 4.0.7;;;;;
+Generator:;C:/Program Files/KiCad/bin/scripting/plugins/bom_csv_grouped_by_value.py;;;;;
+Component Count:;52;;;;;
+;;;;;;
+Individual Components:;;;;;;
+;;;;;;
+Item;Qty;Reference(s);Value;LibPart;Footprint;Datasheet
+;;BP1;POUSSOIR_ON;Carte_Temperature-cache:POUSSOIR_ON;Buttons_Switches_THT:SW_PUSH_6mm;
+;;C1;100nF;device:C;Capacitors_SMD:C_1206_HandSoldering;
+;;C11;1uF;device:C;Capacitors_SMD:C_1206_HandSoldering;
+;;D1;D;device:D;Diodes_THT:D_DO-15_P10.16mm_Horizontal;
+;;D2;D;device:D;Diodes_THT:D_DO-15_P10.16mm_Horizontal;
+;;D3;D;device:D;Diodes_THT:D_DO-15_P10.16mm_Horizontal;
+;;D4;D;device:D;Diodes_THT:D_DO-15_P10.16mm_Horizontal;
+;;J1;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J2;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J3;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J4;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J5;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J6;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J7;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J8;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J9;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J10;Conn_01x02;conn:Conn_01x02;Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm;
+;;J11;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J12;HEADER_10P;Carte_Temperature-cache:HEADER_10P;Carte_Temperature:JTAG;
+;;J13;Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+;;J14;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J15;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J16;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J17;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J18;RCJ-041;Carte_Temperature:RCJ-041;Carte_Temperature:CUI_RCJ-041_Graveuse;RCJ-041
+;;J19;RCJ-041;Carte_Temperature:RCJ-041;Carte_Temperature:CUI_RCJ-041_Graveuse;RCJ-041
+;;J20;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J21;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J22;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J23;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J24;RCJ-041;Carte_Temperature:RCJ-041;Carte_Temperature:CUI_RCJ-041_Graveuse;RCJ-041
+;;J25;RCJ-041;Carte_Temperature:RCJ-041;Carte_Temperature:CUI_RCJ-041_Graveuse;RCJ-041
+;;J26;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J27;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J28;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J29;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;J30;Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+;;Q1;IRL3705;Carte_Temperature:IRL3705;Carte_Temperature:TO254P1052X465X1989-3-IRL3705;
+;;Q2;IRL3705;Carte_Temperature:IRL3705;Carte_Temperature:TO254P1052X465X1989-3-IRL3705;
+;;Q3;IRL3705;Carte_Temperature:IRL3705;Carte_Temperature:TO254P1052X465X1989-3-IRL3705;
+;;Q4;IRL3705;Carte_Temperature:IRL3705;Carte_Temperature:TO254P1052X465X1989-3-IRL3705;
+;;R1;18k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R2;18k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R3;18k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R4;18k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R5;1k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R6;1k;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R15;1K;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R16;1K;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;R17;1K;device:R;Resistors_SMD:R_1206_HandSoldering;
+;;U1;EEH210;Carte_Temperature:EEH210;Carte_Temperature:EEH210_1.5mm;
+;;U7;C8051F38C;Carte_Temperature-cache:C8051F38C;Carte_Temperature:C8051F38C;
+;;;;;;
+;;;;;;
+;;;;;;
+Collated Components:;;;;;;
+;;;;;;
+Item;Qty;Reference(s);Value;LibPart;Footprint;Datasheet
+1;1;BP1;POUSSOIR_ON;Carte_Temperature-cache:POUSSOIR_ON;Buttons_Switches_THT:SW_PUSH_6mm;
+2;1;C1;100nF;device:C;Capacitors_SMD:C_1206_HandSoldering;
+3;1;C11;1uF;device:C;Capacitors_SMD:C_1206_HandSoldering;
+4;4;"D1; D2; D3; D4";D;device:D;Diodes_THT:D_DO-15_P10.16mm_Horizontal;
+5;10;"J1; J2; J3; J4; J5; J6; J7; J8; J9; J13";Conn_01x03;conn:Conn_01x03;Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm;
+6;1;J10;Conn_01x02;conn:Conn_01x02;Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm;
+7;14;"J11; J14; J15; J16; J17; J20; J21; J22; J23; J26; J27; J28; J29; J30";Conn_01x01;conn:Conn_01x01;base_V2:TSC_CON1_poignard;
+8;1;J12;HEADER_10P;Carte_Temperature-cache:HEADER_10P;Carte_Temperature:JTAG;
+9;4;"J18; J19; J24; J25";RCJ-041;Carte_Temperature:RCJ-041;Carte_Temperature:CUI_RCJ-041_Graveuse;RCJ-041
+10;4;"Q1; Q2; Q3; Q4";IRL3705;Carte_Temperature:IRL3705;Carte_Temperature:TO254P1052X465X1989-3-IRL3705;
+11;4;"R1; R2; R3; R4";18k;device:R;Resistors_SMD:R_1206_HandSoldering;
+12;2;"R5; R6";1k;device:R;Resistors_SMD:R_1206_HandSoldering;
+13;3;"R15; R16; R17";1K;device:R;Resistors_SMD:R_1206_HandSoldering;
+14;1;U1;EEH210;Carte_Temperature:EEH210;Carte_Temperature:EEH210_1.5mm;
+15;1;U7;C8051F38C;Carte_Temperature-cache:C8051F38C;Carte_Temperature:C8051F38C;
