@@ -1,0 +1,42 @@
+Source:;C:/Users/DIETRICHT_ELEC/Desktop/Diplome_Telescope_Dietrich_V17/Kicad_Telescope_V6/Charge_active_Dietrich_V2/Charge_active_Dietrich.sch;;;;;;;;;;;;;;;
+Date:;24.05.2019 11:29;;;;;;;;;;;;;;;
+Tool:;Eeschema 4.0.7;;;;;;;;;;;;;;;
+Generator:;C:/Program Files/KiCad/bin/scripting/plugins/bom_csv_grouped_by_value.py;;;;;;;;;;;;;;;
+Component Count:;17;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+Individual Components:;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+Item;Qty;Reference(s);Value;LibPart;Footprint;Datasheet;Champ4;Champ5;Champ6;Champ7;Champ8;Field4;Field5;Field6;Field7;Field8
+;;C1;NC;BASE_V2:C;base_V2:SM_C_1206;;;;;;;;;;;
+;;C2;NC;BASE_V2:C;base_V2:SM_C_1206;;;;;;;;;;;
+;;Cin1;100uF;BASE_V2:C;Capacitors_SMD:CP_Elec_8x10;;;;;;;;;;;
+;;Cout1;1000uF;BASE_V2:C;Capacitors_SMD:CP_Elec_8x10;;;;;;;;;;;
+;;D1;MBR340;device:D_Schottky;Diodes_SMD:D_SMA;;;;;;;;;;;
+;;J1;CON2;BASE_V2:CON2;base_V2:TSC_CON2_SIL;;;;;;;;;;;
+;;J2;CON2;BASE_V2:CON2;base_V2:TSC_CON2_SIL;;;;;;;;;;;
+;;J3;CON2;BASE_V2:CON2;base_V2:TSC_CON2_SIL;;;;;;;;;;;
+;;J4;CON2;BASE_V2:CON2;base_V2:TSC_CON2_SIL;;;;;;;;;;;
+;;J5;CON1;BASE_V2:CON1;base_V2:TSC_CON1_poignard;;;;;;;;;;;
+;;J6;CON1;BASE_V2:CON1;base_V2:TSC_CON1_poignard;;;;;;;;;;;
+;;J7;CON1;BASE_V2:CON1;base_V2:TSC_CON1_poignard;;;;;;;;;;;
+;;J8;CON1;BASE_V2:CON1;base_V2:TSC_CON1_poignard;;;;;;;;;;;
+;;L1;100uH;BASE_V2:L;DR127-221-R:INDM125125X800N;;;;;;;;;;;
+;;R1;NC;BASE_V2:R;base_V2:SM_R_1206;;;;;;;;;;;
+;;R2;0;BASE_V2:R;base_V2:SM_R_1206;;;;;;;;;;;
+;;U1;LM2575HVS-ADJ;LM2575HVS-ADJ:LM2575HVS-ADJ;LM2575HVS-ADJ:TO170P1435X457-6N;TO-263-5 Texas Instruments;Texas Instruments;4.76 USD;LM2575HVS-ADJ;Warning;Conv DC-DC 4V to 60V Step Down Single-Out 1.23V to 57V 1A 6-Pin_5+Tab_ TO-263 Tube;Texas Instruments;4.76 USD;LM2575HVS-ADJ;Warning;Conv DC-DC 4V to 60V Step Down Single-Out 1.23V to 57V 1A 6-Pin_5+Tab_ TO-263 Tube
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+Collated Components:;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+Item;Qty;Reference(s);Value;LibPart;Footprint;Datasheet;Champ4;Champ5;Champ6;Champ7;Champ8;Field4;Field5;Field6;Field7;Field8
+1;2;"C1; C2";NC;BASE_V2:C;base_V2:SM_C_1206;;;;;;;;;;;
+2;1;Cin1;100uF;BASE_V2:C;Capacitors_SMD:CP_Elec_8x10;;;;;;;;;;;
+3;1;Cout1;1000uF;BASE_V2:C;Capacitors_SMD:CP_Elec_8x10;;;;;;;;;;;
+4;1;D1;MBR340;device:D_Schottky;Diodes_SMD:D_SMA;;;;;;;;;;;
+5;4;"J1; J2; J3; J4";CON2;BASE_V2:CON2;base_V2:TSC_CON2_SIL;;;;;;;;;;;
+6;4;"J5; J6; J7; J8";CON1;BASE_V2:CON1;base_V2:TSC_CON1_poignard;;;;;;;;;;;
+7;1;L1;100uH;BASE_V2:L;DR127-221-R:INDM125125X800N;;;;;;;;;;;
+8;1;R1;NC;BASE_V2:R;base_V2:SM_R_1206;;;;;;;;;;;
+9;1;R2;0;BASE_V2:R;base_V2:SM_R_1206;;;;;;;;;;;
+10;1;U1;LM2575HVS-ADJ;LM2575HVS-ADJ:LM2575HVS-ADJ;LM2575HVS-ADJ:TO170P1435X457-6N;TO-263-5 Texas Instruments;Texas Instruments;4.76 USD;LM2575HVS-ADJ;Warning;Conv DC-DC 4V to 60V Step Down Single-Out 1.23V to 57V 1A 6-Pin_5+Tab_ TO-263 Tube;Texas Instruments;4.76 USD;LM2575HVS-ADJ;Warning;Conv DC-DC 4V to 60V Step Down Single-Out 1.23V to 57V 1A 6-Pin_5+Tab_ TO-263 Tube
