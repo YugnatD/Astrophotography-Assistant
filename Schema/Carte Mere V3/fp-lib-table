@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name "Carte Mere")(type KiCad)(uri "$(KIPRJMOD)/Carte Mere.pretty")(options "")(descr ""))
+  (lib (name base_V2)(type Legacy)(uri "C:/Users/DIETRICHT_ELEC/Desktop/Diplome_Telescope_Dietrich_V13/Kicad_Telescope_V6/Carte Temperature V2/BASE_V2/base_V2.mod")(options "")(descr ""))
+)
