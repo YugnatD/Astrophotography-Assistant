@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8"/>
+		
+		<title>Controle de telescope</title>
+		<link href="/static/mon_style.css" rel="stylesheet" type="text/css" />
+		<script src="/static/jquery-3.2.1.min.js"></script>
+		<script src="/static/Chart.bundle.js"></script>
+		<script src="/static/utils.js"></script>
+		
+		<script>	
+			var delai=10;	
+			var dumb;
+		window.onload = function() {
+			var lineChartData = 
+			{
+				title : "Capteur de temperature",
+				type: 'line',
+				data: 
+				{
+					labels: [],
+					datasets: 
+					[
+						{
+							label: 'Temperature_Ambiante',
+							backgroundColor: window.chartColors.red,
+							borderColor: window.chartColors.red,
+							data: [],
+							fill: false,
+						},
+						{
+							label: 'Capteur 0 [°C]',
+							fill: false,
+							backgroundColor: window.chartColors.purple,
+							borderColor: window.chartColors.purple,
+							data: [],
+						},
+						{
+							label: 'Capteur 1 [°C]',
+							fill: false,
+							backgroundColor: window.chartColors.green,
+							borderColor: window.chartColors.green,
+							data: [],
+						},
+						{
+							label: 'Capteur 2 [°C]',
+							fill: false,
+							backgroundColor: window.chartColors.yellow,
+							borderColor: window.chartColors.yellow,
+							data: [],
+						}
+						,
+						{
+							label: 'Capteur 3 [°C]',
+							fill: false,
+							backgroundColor: window.chartColors.orange,
+							borderColor: window.chartColors.orange,
+							data: [],
+						}
+						,
+						{
+							label: 'Temperature Rose [°C]',
+							fill: false,
+							backgroundColor: window.chartColors.grey,
+							borderColor: window.chartColors.grey,
+							data: [],
+						}
+						,
+						{
+							label: 'Humidité [%]',
+							fill: false,
+							backgroundColor: window.chartColors.blue,
+							borderColor: window.chartColors.blue,
+							data: [],
+						}
+					]
+				},
+				options: 
+				{
+					responsive: true,
+					title: 
+					{
+						display: true,
+						text: 'Capteur Temperature'
+					},
+					tooltips: 
+					{
+						mode: 'index',
+						intersect: false,
+					},
+					hover: 
+					{
+						mode: 'nearest',
+						intersect: true
+					},
+					scales: 
+					{
+						xAxes: 
+						[
+						{
+							//display: true,
+							//scaleLabel: 
+							//{
+							//	display: true,
+							//	labelString: 'Temps'
+							//}
+							//type: 'time',
+							//time: 
+							//{
+								//displayFormats: 
+								//{
+								//	quarter: 'MMM YYYY'
+								//}
+							//}
+						}],
+						yAxes: 
+						[{
+							display: true,
+							scaleLabel: 
+							{
+								display: true,
+								labelString: 'Temperature et humidité'
+							}
+						}]
+					}
+				}
+			};
+			dumb=lineChartData;
+			var ctx = document.getElementById('canvas').getContext('2d');
+			window.myLine = new Chart(ctx, lineChartData);
+			
+			$('button#StartMesure').click(function(){
+				var start=0;
+					if(document.getElementById("StartMesure").innerHTML=="Arreter les mesures")
+					{
+						document.getElementById("StartMesure").innerHTML="Demarrer les mesures";
+						start=0;
+					}
+					else
+					{
+						document.getElementById("StartMesure").innerHTML="Arreter les mesures";
+						start=1;
+					}
+				$.ajax
+				({
+					
+					url: "/Telescope/StartMesure/",
+					type: "POST", //send it through get method
+					data: {"Reponse": start},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+
+			$('button#btnStellarium').click(function(){
+				var start=0;
+					if(document.getElementById("btnStellarium").innerHTML=="Arreter stellarium")
+					{
+						document.getElementById("btnStellarium").innerHTML="Demarrer stellarium";
+						document.getElementById("StartMesure").innerHTML="Arreter les mesures";
+						start=0;
+					}
+					else
+					{
+						document.getElementById("btnStellarium").innerHTML="Arreter stellarium";
+						document.getElementById("StartMesure").innerHTML="Demarrer les mesures";
+						start=1;
+					}
+				$.ajax
+				({
+					
+					url: "/Telescope/StartStellarium/",
+					type: "POST", //send it through get method
+					data: {"Reponse": start},
+					success: function(response) 
+					{
+						
+					}
+				});	
+				$.ajax
+				({
+					
+					url: "/Telescope/StartMesure/",
+					type: "POST", //send it through get method
+					data: {"Reponse": 0},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#CreateNewFile').click(function(){
+				document.getElementById("StartMesure").innerHTML="Arreter les mesures";
+				alert("La page va etre recharger");
+				//window.location.reload(1);
+				$.ajax
+				({
+					
+					url: "/Telescope/CreateNewFile/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#RA_Pos').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/RA_Pos/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#RA_Neg').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/RA_Neg/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#RA_Stop').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/RA_Stop/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#DEC_Pos').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/DEC_Pos/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#DEC_Neg').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/DEC_Neg/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('button#DEC_Stop').click(function(){
+				$.ajax
+				({
+					
+					url: "/Telescope/DEC_Stop/",
+					type: "POST", //send it through get method
+					data: {"Reponse": "OK"},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
+			
+			$('input#sliderPwm0').click(function()
+			{
+				$.ajax
+				({
+					url: "/Telescope/Set_Pwm0/",
+					type: "POST", //send it through get method
+					data:{"SliderValue": document.getElementById("sliderPwm0").value},
+					success: function(response) 
+					{
+						valueConsigne0 = Math.round(document.getElementById("sliderPwm0").value);
+						document.getElementById("valuePwm0").innerHTML = valueConsigne0;
+					}
+				});
+			});
+			
+			$('input#sliderPwm1').click(function()
+			{
+				$.ajax
+				({
+					url: "/Telescope/Set_Pwm1/",
+					type: "POST", //send it through get method
+					data:{"SliderValue": document.getElementById("sliderPwm1").value},
+					success: function(response) 
+					{
+						valueConsigne1 = Math.round(document.getElementById("sliderPwm1").value);
+						document.getElementById("valuePwm1").innerHTML = valueConsigne1;
+					}
+				});
+			});
+			
+			$('input#sliderPwm2').click(function()
+			{
+				$.ajax
+				({
+					url: "/Telescope/Set_Pwm2/",
+					type: "POST", //send it through get method
+					data:{"SliderValue": document.getElementById("sliderPwm2").value},
+					success: function(response) 
+					{
+						valueConsigne2 = Math.round(document.getElementById("sliderPwm2").value);
+						document.getElementById("valuePwm2").innerHTML = valueConsigne2;
+					}
+				});
+			});
+			
+			$('input#sliderPwm3').click(function()
+			{
+				$.ajax
+				({
+					url: "/Telescope/Set_Pwm3/",
+					type: "POST", //send it through get method
+					data:{"SliderValue": document.getElementById("sliderPwm3").value},
+					success: function(response) 
+					{
+						valueConsigne3 = Math.round(document.getElementById("sliderPwm3").value);
+						document.getElementById("valuePwm3").innerHTML = valueConsigne3;
+					}
+				});
+			});
+			
+			$('input#nMesure').on('change', function () {
+				if(document.getElementById("nMesure").value>=3)
+				{
+					
+				}
+				else
+				{
+					document.getElementById("nMesure").value = 3;
+				}
+				delai=document.getElementById("nMesure").value*1000;
+				//console.log(delai)
+				$.ajax
+					({
+						url: "/Telescope/SetInterval/",
+						type: "POST", //send it through get method
+						data:{"Reponse": document.getElementById("nMesure").value},
+						success: function(response) 
+						{
+							
+						}
+					});
+				
+				//alert("changed");            
+			});
+			//Code a lancer a l'ouverture de la page ici :
+			//ouverture du ficher json Config.cfg
+			//var delai=0;
+			var rawFile = new XMLHttpRequest();
+			rawFile.open("GET", "/Config.cfg", false);
+			rawFile.onreadystatechange = function ()
+			{
+				if(rawFile.readyState === 4)
+				{
+					if(rawFile.status === 200 || rawFile.status == 0)
+					{
+						var allText = rawFile.responseText;
+						var obj = JSON.parse(allText);
+						if(obj.State==true)
+						{
+							document.getElementById("StartMesure").innerHTML = "Arreter les mesures";
+							delai=obj.Delai*1000;
+							document.getElementById("nMesure").value = obj.Delai;
+							//setInterval(TimerMesure,obj.Delai*1000);
+							window.setTimeout(TimerMesure, delai);
+							//console.log(delai)
+							//Charge les donne des mesure en cours
+							var ctx = document.getElementById('canvas').getContext('2d');
+							window.myLine = new Chart(ctx, lineChartData);
+							$.ajax
+							({
+								url: "/Telescope/GetChart",
+								type: "POST", //send it through get method
+								data: {"Reponse": "ok"},
+								success: function(response) 
+								{
+									
+									for (i = 1; i < response.data[0].length; i++) {
+										var x = 0;
+										//window.myLine.data.labels.push(window.myLine.data.labels.length);
+										window.myLine.data.labels.push(response.data[response.data.length-1][i]);
+										window.myLine.data.datasets.forEach(function(dataset) 
+										{
+											
+											dataset.data.push(parseFloat(response.data[x][i]));
+											x++;					
+										});
+										window.myLine.update();
+									}
+								}
+							});
+						}
+						else //Aucune mesure en cours
+						{
+							document.getElementById("StartMesure").innerHTML = "Demarrer les mesures";
+						}
+					}
+				}
+			}
+			rawFile.send(null);
+			
+		};
+		
+		function readTextFile(file)
+		{
+			var rawFile = new XMLHttpRequest();
+			rawFile.open("GET", file, false);
+			rawFile.onreadystatechange = function ()
+			{
+				if(rawFile.readyState === 4)
+				{
+					if(rawFile.status === 200 || rawFile.status == 0)
+					{
+						var allText = rawFile.responseText;
+						//alert(allText);
+						return allText;
+					}
+				}
+			}
+			
+			rawFile.send(null);
+		}
+		
+		function TimerMesure() {
+		$.ajax
+				({
+					url: "/Telescope/GetData",
+					type: "POST", //send it through get method
+					data: {"Reponse": "ok"},
+					success: function(response) 
+					{
+						var x = 0;
+						console.log(window.myLine.data.labels.length);
+						if(window.myLine.data.labels.length>=49)
+						{
+							window.myLine.data.labels.shift();
+						}
+						window.myLine.data.labels.push(response.data[response.data.length-1]);
+						window.myLine.data.datasets.forEach(function(items) 
+						{
+							if(window.myLine.data.labels.length>=49)
+							{
+								items.data.shift();
+							}
+							items.data.push(parseFloat(response.data[x]));
+							x++;				
+						});
+						window.myLine.update();
+					}
+				});
+				//console.log(delai)
+				window.setTimeout(TimerMesure, delai);
+		}
+		
+		
+		
+		</script>
+	</head>
+	<body>
+		<ul>
+		  <li><a class = "active" href="">Telescope</a></li>
+		</ul>
+		<h1>Telescope</h1>
+		<canvas id="canvas" width="300" height="100"></canvas>
+		<button id="CreateNewFile" >Demarrer une nouvelle mesure</button>
+		<button id="StartMesure" >Demarrer les mesures</button>
+		<button id="btnStellarium" >Demarrer stellarium</button>
+		<button id="RA_Pos" >RA+</button>
+		<button id="RA_Stop" >Stop RA</button>
+		<button id="RA_Neg" >RA-</button>
+		<button id="DEC_Pos" >DEC+</button>
+		<button id="DEC_Stop" >Stop Dec</button>
+		<button id="DEC_Neg" >DEC-</button><br>
+		<br>
+		une mesure toutes les : 
+		<input type="number" name="nMesure" id="nMesure" min="1" max="300" width="50"><br>
+		<a href="/Mesure">Telecharger toutes les mesure</a><br>
+		<h2>Pwm 0 :</h2>
+		<input type="range" min="0" max="255" value = "255" class="slider" id="sliderPwm0"></input>
+		<span id="valuePwm0">Pwm0 : </span>
+		
+		<h2>Pwm 1 :</h2>
+		<input type="range" min="0" max="255" value = "255" class="slider" id="sliderPwm1"></input>
+		<span id="valuePwm1">Pwm1 : </span>	
+		
+		<h2>Pwm 2 :</h2>
+		<input type="range" min="0" max="255" value = "255" class="slider" id="sliderPwm2"></input>
+		<span id="valuePwm2">Pwm2 : </span>	
+		
+		<h2>Pwm 3 :</h2>
+		<input type="range" min="0" max="255" value = "255" class="slider" id="sliderPwm3"></input>
+		<span id="valuePwm3">Pwm3 : </span>	
+	</body>
+</html>
