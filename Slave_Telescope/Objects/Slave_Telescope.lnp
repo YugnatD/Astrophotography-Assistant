@@ -1,0 +1,4 @@
+".\Objects\Slave_Telescope.obj",
+".\Delay48M.LIB" 
+TO ".\Objects\Slave_Telescope" 
+PRINT(".\Listings\Slave_Telescope.m51") RAMSIZE(256) 
