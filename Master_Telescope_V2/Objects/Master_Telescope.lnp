@@ -1,0 +1,4 @@
+".\Objects\Master_Telescope V3.obj",
+".\Delay48M.LIB" 
+TO ".\Objects\Master_Telescope" 
+PRINT(".\Listings\Master_Telescope.m51") RAMSIZE(256) 

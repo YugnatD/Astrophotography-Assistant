@@ -1,0 +1,1221 @@
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE MASTER_TELESCOPE_V2
+OBJECT MODULE PLACED IN .\Objects\Master_Telescope_V2.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Master_Telescope_V2.c OPTIMIZE(0,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(
+                    -.\Listings\Master_Telescope_V2.lst) TABS(3) OBJECT(.\Objects\Master_Telescope_V2.obj)
+
+line level    source
+
+   1          /*===========================================================================*=
+   2             Master_Telescope - Tanguy Dietrich
+   3            =============================================================================
+   4             Descriptif: 
+   5             Gestion de moteur d'une monture NEQ5.
+   6             Le moteur R.A a une vitesse constante correspondant a la vitesse sideral.
+   7             Le moteur DEC est activer lorsque la pin p2.2 ou P2.3(ST4) sont a 0
+   8             Le tout est commander avec un port ST4
+   9          =*===========================================================================*/
+  10          
+  11          #include <reg51f380.h>     // registres 51f38C
+  12          #include "Vitesse_Moteur.h"
+  13          #include "Delay48M.h"
+  14          #include "SmBus0.h"
+  15          #include "string.h"
+  16          
+  17          #define CONFIG_PAGE 0x0F
+  18          #define LEGACY_PAGE 0x00
+  19          #define BAUD_UART0 247 //247=57600
+  20          
+  21          //PCB
+  22          sbit STEP_RA = P1^3;
+  23          sbit DIR_RA = P1^2;
+  24          sbit NSLEEP_RA = P1^0;
+  25          sbit NFAULT_RA = P1^1;
+  26          
+  27          sbit STEP_DEC = P1^7;
+  28          sbit DIR_DEC = P1^6;
+  29          sbit NSLEEP_DEC = P1^4;
+  30          sbit NFAULT_DEC = P1^5;
+  31          
+  32          sbit ST4_RA_NEG = P2^0;
+  33          sbit ST4_RA_POS = P2^1;
+  34          sbit ST4_DEC_NEG = P2^2;
+  35          sbit ST4_DEC_POS = P2^3;
+  36          
+  37          sbit SDA = P0^0;
+  38          sbit SCL = P0^1;
+  39          
+  40          
+  41          // ==== FONCTIONS PROTOTYPES===================================================
+  42          void ClockInit ();         // init. clock syst�me
+  43          void PortInit ();          // init. config des ports
+  44          void TimerInit();
+  45          void Init_int();
+  46          void SMBus_Init (void);
+  47          void Timer3_Init (void);
+  48          void Timer2_Init (void);
+  49          void SMB_Write (void);
+  50          void SMB_Read (void);
+  51          void UART_Init();
+  52          void decodeUartRaspberryPi();
+  53          void setMotorRA(unsigned char vitesse,bit direction);
+  54          void setMotorDEC(unsigned char vitesse,bit direction);
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 2   
+
+  55          void stopMotorDec();
+  56          void configMCP23008(unsigned char input);
+  57          unsigned char read_i2c_port();
+  58          void reset_i2c();
+  59          // ==== MAIN ==================================================================
+  60          
+  61          //SMBus0
+  62          unsigned char gSMBNumBytesToWR = 2; // Number of bytes to write
+  63                                              // Master -> Slave
+  64          unsigned char gSMBNumBytesToRD = 3; // Number of bytes to read
+  65                                              // Master <- Slave
+  66          
+  67          // Global holder for SMBus data
+  68          // All receive data is written here
+  69          unsigned char gSMBDataIN[NUM_BYTES_MAX_RD];
+  70          
+  71          // Global holder for SMBus data.
+  72          // All transmit data is read from here
+  73          unsigned char gSMBDataOUT[NUM_BYTES_MAX_WR];
+  74          
+  75          unsigned char gTarget;                  // gTarget SMBus slave address
+  76          
+  77          bit SMB_BUSY;                          // Software flag to indicate when the
+  78                                                 // SMB_Read() or SMB_Write() functions
+  79                                                 // have claimed the SMBus
+  80          
+  81          bit SMB_RW;                            // Software flag to indicate the
+  82                                                 // direction of the current transfer
+  83          
+  84          unsigned long NUM_ERRORS;              // Counter for the number of errors.
+  85          
+  86          
+  87          
+  88          
+  89          //Gestion Moteur
+  90          unsigned char gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
+  91          unsigned char gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
+  92          unsigned int gVitesseDEC=VITESSE_DEC_MAX;
+  93          unsigned char gVitesseDeplacement=VITESSE_MAX;
+  94          
+  95          //Uart
+  96          xdata unsigned char gUart0Tx[10]="";
+  97          xdata unsigned char gUart0Rx[10];
+  98          unsigned char gUart0NbrByteTx=0;
+  99          unsigned char gUart0NbrByteRx=0;
+ 100          bit gUart0FlagReceive;
+ 101          
+ 102          xdata unsigned char gUart1Tx[10]="";
+ 103          xdata unsigned char gUart1Rx[10];
+ 104          unsigned char gUart1NbrByteTx=0;
+ 105          unsigned char gUart1NbrByteRx=0;
+ 106          bit gUart1FlagReceive;
+ 107          bit gDirRa=0;
+ 108          bit gDirDec=0;
+ 109          unsigned char gAstrSuivi=0;
+ 110          bit gFlagMovingRA=0;
+ 111          bit gFlagChangeSpeedRA=0;
+ 112          
+ 113          void main () 
+ 114          {
+ 115   1         unsigned char portExtender;
+ 116   1         unsigned char memoAstreSuivi=0;
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 3   
+
+ 117   1         bit waitEndMove=0;
+ 118   1         PCA0MD &= ~0x40;     // WDTE = 0 (disable watchdog timer)
+ 119   1         ClockInit ();        // init. clock syst�me
+ 120   1         PortInit ();         // init. config des ports
+ 121   1         SDA=1;
+ 122   1         reset_i2c();
+ 123   1         Init_int();
+ 124   1         Timer3_Init();                      // Configure Timer3 for use with SMBus
+ 125   1                                             // low timeout detect
+ 126   1         Timer2_Init();
+ 127   1      
+ 128   1         SMBus_Init ();                      // Configure and enable SMBus
+ 129   1         UART_Init();
+ 130   1         TimerInit();
+ 131   1         EA=1;//Autorise toutes les interruption
+ 132   1         EIE1      |= 0x81;
+ 133   1          EIE2      |= 0x12;
+ 134   1          IE        |= 0x97;
+ 135   1         TR0 = 1;//lance le timer 0
+ 136   1         TR1=1;
+ 137   1         NSLEEP_RA=1;//Active le chip drv8825
+ 138   1         NSLEEP_DEC=0;
+ 139   1         DIR_RA=0;
+ 140   1         DIR_DEC=0;
+ 141   1         
+ 142   1         SDA=1;
+ 143   1         Delay_1ms (20);
+ 144   1         configMCP23008(0xFF);
+ 145   1         portExtender=read_i2c_port();
+ 146   1         gAstrSuivi=(portExtender>>4);
+ 147   1         memoAstreSuivi=gAstrSuivi;
+ 148   1         while (1)
+ 149   1         {
+ 150   2            memoAstreSuivi=gAstrSuivi;
+ 151   2            
+ 152   2            gVitesseDeplacement=(P2>>4)+VITESSE_X05;
+ 153   2            portExtender=read_i2c_port();
+ 154   2            gAstrSuivi=(portExtender>>4);
+ 155   2            gDirRa=(portExtender&0x04)>>2;
+ 156   2            gDirDec=(portExtender&0x08)>>3;
+ 157   2            
+ 158   2            if((memoAstreSuivi!=gAstrSuivi)||(waitEndMove==1))
+ 159   2            {
+ 160   3               waitEndMove=1;
+ 161   3               if(gFlagMovingRA==0)
+ 162   3               {
+ 163   4                  setMotorRA(gAstrSuivi,gDirRa);
+ 164   4                  waitEndMove=0;
+ 165   4               }
+ 166   3            }
+ 167   2            
+ 168   2            if((NFAULT_RA==0)&&(NSLEEP_RA==1))//probleme sur le DRV8825 de l'axe R.A
+ 169   2            {
+ 170   3               NSLEEP_RA=0;
+ 171   3               Delay_1ms (10);
+ 172   3               NSLEEP_RA=1;
+ 173   3               Delay_1ms (10);//1.7ms necessaire au rallumage
+ 174   3            }
+ 175   2            
+ 176   2            if((NFAULT_DEC==0)&&(NSLEEP_DEC==1))//probleme sur le DRV8825 de l'axe DEC
+ 177   2            {
+ 178   3               NSLEEP_DEC=0;//Eteint
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 4   
+
+ 179   3               Delay_1ms (10);
+ 180   3               NSLEEP_DEC=1;//Allume
+ 181   3               Delay_1ms (10);
+ 182   3            }
+ 183   2            
+ 184   2            if(gUart0FlagReceive)
+ 185   2            {
+ 186   3               gUart0FlagReceive=0;
+ 187   3               while(gUart0NbrByteTx!=0);
+ 188   3               decodeUartRaspberryPi();
+ 189   3            }
+ 190   2            
+ 191   2            if(gUart1FlagReceive)
+ 192   2            {
+ 193   3               while(gUart0NbrByteTx!=0);
+ 194   3               gUart1FlagReceive=0;
+ 195   3               strcpy(gUart0Tx,gUart1Rx);
+ 196   3               TI0=1;
+ 197   3            }
+ 198   2            
+ 199   2         } // End while (1)
+ 200   1      } // main =====================================================================
+ 201          
+ 202          //INTERRUPTION
+ 203          /*---------------------------------------------------------------------------*-
+ 204          interruption0()
+ 205          -----------------------------------------------------------------------------
+ 206          Descriptif: Fonction d'interruption INT0 vecteur 0
+ 207                      Pin :P0.6 - Descendant
+ 208          Entree    : --
+ 209          Sortie    : --
+ 210          -*---------------------------------------------------------------------------*/
+ 211          void interruption_ST4_RA() interrupt 0
+ 212          {
+ 213   1         IT01CF=IT01CF^0x08;
+ 214   1         if((!ST4_RA_POS)&&(!ST4_RA_NEG))
+ 215   1         {
+ 216   2            setMotorRA(gAstrSuivi,gDirRa);
+ 217   2            gFlagMovingRA=0;
+ 218   2         }
+ 219   1         else if((ST4_RA_POS)&&(ST4_RA_NEG))
+ 220   1         {
+ 221   2            setMotorRA(gAstrSuivi,gDirRa);
+ 222   2            gFlagMovingRA=0;
+ 223   2         }
+ 224   1         else if((ST4_RA_POS)&&(!ST4_RA_NEG))//Est
+ 225   1         {
+ 226   2            setMotorRA(gVitesseDeplacement,gDirRa);
+ 227   2            gFlagMovingRA=1;
+ 228   2         }
+ 229   1         else if((!ST4_RA_POS)&&(ST4_RA_NEG))//West
+ 230   1         {
+ 231   2            setMotorRA(gVitesseDeplacement,!gDirRa);
+ 232   2            gFlagMovingRA=1;
+ 233   2         }
+ 234   1      }
+ 235          /*---------------------------------------------------------------------------*-
+ 236          interruption1()
+ 237          -----------------------------------------------------------------------------
+ 238          Descriptif: Fonction d'interruption 1 vecteur 2
+ 239                      Pin :P0.7 - Descendant
+ 240          Entree    : --
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 5   
+
+ 241          Sortie    : --
+ 242          -*---------------------------------------------------------------------------*/
+ 243          void interruption_ST4_DEC() interrupt 2
+ 244          {
+ 245   1         IT01CF=IT01CF^0x80;
+ 246   1         if((!ST4_DEC_POS)&&(!ST4_DEC_NEG))//00
+ 247   1         {
+ 248   2            stopMotorDec();
+ 249   2         }
+ 250   1         else if((ST4_DEC_POS)&&(ST4_DEC_NEG))//11
+ 251   1         {
+ 252   2            stopMotorDec();
+ 253   2         }
+ 254   1         else if((ST4_DEC_POS)&&(!ST4_DEC_NEG))//10
+ 255   1         {
+ 256   2            setMotorDEC(gVitesseDeplacement,gDirDec);
+ 257   2         }
+ 258   1         else if((!ST4_DEC_POS)&&(ST4_DEC_NEG))//01
+ 259   1         {
+ 260   2            setMotorDEC(gVitesseDeplacement,!gDirDec);
+ 261   2         }
+ 262   1      }
+ 263          
+ 264          /*---------------------------------------------------------------------------*-
+ 265          timer0()
+ 266          -----------------------------------------------------------------------------
+ 267          Descriptif: Fonction d'interruption Timer0 vecteur 1
+ 268                    Temporisation definit par gVitesseRAH-L
+ 269                    Mode : 16bit
+ 270          Entree    : --
+ 271          Sortie    : --
+ 272          -*---------------------------------------------------------------------------*/
+ 273          void timer0() interrupt 1
+ 274          {
+ 275   1         TR0=0;
+ 276   1         TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
+ 277   1         TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
+ 278   1         TR0=1;
+ 279   1         STEP_RA=!STEP_RA;
+ 280   1      }
+ 281          
+ 282          ///*---------------------------------------------------------------------------*-
+ 283          //timer1()
+ 284          //-----------------------------------------------------------------------------
+ 285          //Descriptif: Fonction d'interruption Timer1 vecteur 3
+ 286          //          Mode : 8 bit 9600baud
+ 287          //Entree    : --
+ 288          //Sortie    : --
+ 289          //-*---------------------------------------------------------------------------*/
+ 290          //void timer1() interrupt 3
+ 291          //{
+ 292          //   
+ 293          //}
+ 294          
+ 295          /*---------------------------------------------------------------------------*-
+ 296          timer4()
+ 297          -----------------------------------------------------------------------------
+ 298          Descriptif: Fonction d'interruption Timer4 vecteur 19
+ 299                    Mode : 16bit autoreload
+ 300          Entree    : --
+ 301          Sortie    : --
+ 302          -*---------------------------------------------------------------------------*/
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 6   
+
+ 303          void timer4() interrupt 19
+ 304          {
+ 305   1         static unsigned int cpt=0;
+ 306   1         SFRPAGE   = CONFIG_PAGE;
+ 307   1         TMR4CN &=~0xC0;//Clear pending flag
+ 308   1         SFRPAGE   = LEGACY_PAGE;
+ 309   1         cpt++;
+ 310   1         if(cpt>=gVitesseDEC)
+ 311   1         {
+ 312   2            STEP_DEC=!STEP_DEC;
+ 313   2            cpt=0;
+ 314   2         }
+ 315   1      }
+ 316          /*---------------------------------------------------------------------------*-
+ 317          uart0()
+ 318          -----------------------------------------------------------------------------
+ 319          Descriptif: Fonction d'interruption de l'uart0 vecteur 4
+ 320          Entree    : --
+ 321          Sortie    : --
+ 322          -*---------------------------------------------------------------------------*/
+ 323          void uart0() interrupt 4
+ 324          {
+ 325   1         if(TI0)
+ 326   1         {
+ 327   2            TI0=0;
+ 328   2            if(gUart0Tx[gUart0NbrByteTx]!=0)
+ 329   2            {
+ 330   3               SBUF0=gUart0Tx[gUart0NbrByteTx];
+ 331   3               gUart0NbrByteTx++;
+ 332   3            }
+ 333   2            else
+ 334   2            {
+ 335   3               gUart0NbrByteTx=0;
+ 336   3            }
+ 337   2         }
+ 338   1         
+ 339   1         if(RI0)
+ 340   1         {
+ 341   2            RI0=0;
+ 342   2            gUart0Rx[gUart0NbrByteRx]=SBUF0;
+ 343   2            if(gUart0Rx[gUart0NbrByteRx]=='#')
+ 344   2             {
+ 345   3                gUart0FlagReceive=1;
+ 346   3                gUart0Rx[gUart0NbrByteRx+1]=0;
+ 347   3                gUart0NbrByteRx=0;
+ 348   3             }
+ 349   2             else
+ 350   2             {
+ 351   3                gUart0NbrByteRx=(gUart0NbrByteRx+1)%20;
+ 352   3             }
+ 353   2         }
+ 354   1      }
+ 355          
+ 356          /*---------------------------------------------------------------------------*-
+ 357          uart1()
+ 358          -----------------------------------------------------------------------------
+ 359          Descriptif: Fonction d'interruption de l'uart1 vecteur 16
+ 360          Entree    : --
+ 361          Sortie    : --
+ 362          -*---------------------------------------------------------------------------*/
+ 363          void uart1() interrupt 16
+ 364          {
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 7   
+
+ 365   1         if(SCON1&0x02)//TI1
+ 366   1         {
+ 367   2            SCON1=SCON1&~0x02;
+ 368   2            if(gUart1Tx[gUart1NbrByteTx]!=0)
+ 369   2            {
+ 370   3               SBUF1=gUart1Tx[gUart1NbrByteTx];
+ 371   3               gUart1NbrByteTx++;
+ 372   3            }
+ 373   2            else
+ 374   2            {
+ 375   3               gUart1NbrByteTx=0;
+ 376   3            }
+ 377   2         }
+ 378   1         
+ 379   1         if(SCON1&0x01)//RI1
+ 380   1         {
+ 381   2            SCON1=SCON1&~0x01;
+ 382   2            gUart1Rx[gUart1NbrByteRx]=SBUF1;
+ 383   2            if(gUart1Rx[gUart1NbrByteRx]=='\n')
+ 384   2             {
+ 385   3                gUart1FlagReceive=1;
+ 386   3                gUart1Rx[gUart1NbrByteRx+1]=0;
+ 387   3                gUart1NbrByteRx=0;
+ 388   3             }
+ 389   2             else
+ 390   2             {
+ 391   3                gUart1NbrByteRx=(gUart1NbrByteRx+1)%20;
+ 392   3             }
+ 393   2         }
+ 394   1      }
+ 395          
+ 396          //FONCTION
+ 397          
+ 398          /*---------------------------------------------------------------------------*-
+ 399          reset_i2c()
+ 400          -----------------------------------------------------------------------------
+ 401          Descriptif: Verifie si le bus I2C est bloquer, et effectue un reset du bus
+ 402          Entree    : --
+ 403          Sortie    : --
+ 404          -*---------------------------------------------------------------------------*/
+ 405          void reset_i2c()
+ 406          {
+ 407   1         unsigned char i=0;
+ 408   1         if(!SDA)
+ 409   1         {
+ 410   2            //Desactive tout l'I2C
+ 411   2            P0SKIP    = 0x03;//skip les pin SCL SDA
+ 412   2            XBR0      = 0x01;//desactive l'I2C
+ 413   2            //force le slave a sortir des donnee
+ 414   2            while(!SDA)
+ 415   2            {
+ 416   3               // Provide clock pulses to allow the slave to advance out
+ 417   3               // of its current state. This will allow it to release SDA.
+ 418   3               SCL = 0;                         // Drive the clock low
+ 419   3               for(i = 0; i < 100; i++);        // Hold the clock low
+ 420   3               SCL = 1;                         // Release the clock
+ 421   3               for(i = 0; i < 100; i++);        // Hold the clock low
+ 422   3            }
+ 423   2            P0SKIP    = 0x00;//Enleve les skip de pin SDA et SCL
+ 424   2            XBR0      = 0x05;//reactive l'i2c
+ 425   2         }
+ 426   1      }
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 8   
+
+ 427          
+ 428          /*---------------------------------------------------------------------------*-
+ 429          configMCP23008()
+ 430          -----------------------------------------------------------------------------
+ 431          Descriptif: 
+ 432          Entree    : unsigned char input (0 ... 255) - choix de pins a mettre en sortie
+ 433          Sortie    : --
+ 434          -*---------------------------------------------------------------------------*/
+ 435          void configMCP23008(unsigned char input)
+ 436          {
+ 437   1         gTarget = MCP23008_ADDR;       // gTarget the Slave for next SMBus transfer
+ 438   1         gSMBDataOUT[0]  = MCP23008_IODIR;
+ 439   1         gSMBDataOUT[1]  = input;       // Set as INPUT
+ 440   1         gSMBNumBytesToWR = 2;
+ 441   1         SMB_Write();  // Initiate SMBus write
+ 442   1      }
+ 443          
+ 444          /*---------------------------------------------------------------------------*-
+ 445          read_i2c_port()
+ 446          -----------------------------------------------------------------------------
+ 447          Descriptif: Lis le port du MCP23008
+ 448          Entree    : --
+ 449          Sortie    : unsigend char (0 ... 255)
+ 450          -*---------------------------------------------------------------------------*/
+ 451          unsigned char read_i2c_port()
+ 452          {
+ 453   1         while(SMB_BUSY);
+ 454   1         gTarget = MCP23008_ADDR;
+ 455   1         gSMBDataOUT[0]  = MCP23008_GPIO;
+ 456   1         gSMBNumBytesToWR = 1;
+ 457   1         SMB_Write();  // Initiate SMBus write
+ 458   1         while(SMB_BUSY);
+ 459   1         gTarget = MCP23008_ADDR;
+ 460   1         gSMBNumBytesToRD = 1;
+ 461   1         SMB_Read();  // Initiate SMBus write
+ 462   1         return gSMBDataIN[0];
+ 463   1      }
+ 464          
+ 465          /*---------------------------------------------------------------------------*-
+ 466          setMotorRA()
+ 467          -----------------------------------------------------------------------------
+ 468          Descriptif: Applique une vitesse predefinit au moteur et une direction
+ 469          Entree    : 
+ 470                      - unsigned char vitesse (0 ... 10)
+ 471                      - bit direction         (0 ... 1)
+ 472          Sortie    : --
+ 473          -*---------------------------------------------------------------------------*/
+ 474          void setMotorRA(unsigned char vitesse,bit direction)
+ 475          {
+ 476   1         unsigned int i=0;
+ 477   1         TR0=0;
+ 478   1         STEP_RA=0;
+ 479   1         for(i=0;i<1000;i++);//voire figure 1 page 7
+ 480   1         DIR_RA=direction;
+ 481   1         for(i=0;i<1000;i++);//voire figure 1
+ 482   1         switch(vitesse)
+ 483   1         {
+ 484   2            case VITESSE_RA_SIDERAL://suivi sideral
+ 485   2               gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
+ 486   2               gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
+ 487   2            break;
+ 488   2            case VITESSE_RA_LUNE://suivi Lune
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 9   
+
+ 489   2               gVitesseRAH=VITESSE_RA_LUNE_HIGH;
+ 490   2               gVitesseRAL=VITESSE_RA_LUNE_LOW;
+ 491   2            break;
+ 492   2            case VITESSE_RA_SOLEIL://suivi Soleil
+ 493   2               gVitesseRAH=VITESSE_RA_SOLEIL_HIGH;//
+ 494   2               gVitesseRAL=VITESSE_RA_SOLEIL_LOW;
+ 495   2            break;
+ 496   2            case VITESSE_RA_SATURNE://suivi Saturne
+ 497   2               gVitesseRAH=VITESSE_RA_SATURNE_HIGH;//
+ 498   2               gVitesseRAL=VITESSE_RA_SATURNE_LOW;
+ 499   2            break;
+ 500   2            case VITESSE_RA_JUPITER://suivi Jupiter
+ 501   2               gVitesseRAH=VITESSE_RA_JUPITER_HIGH;//
+ 502   2               gVitesseRAL=VITESSE_RA_JUPITER_LOW;
+ 503   2            break;
+ 504   2            case VITESSE_RA_ISS://suivi ISS
+ 505   2               gVitesseRAH=VITESSE_RA_ISS_HIGH;
+ 506   2               gVitesseRAL=VITESSE_RA_ISS_LOW;
+ 507   2            break;
+ 508   2            case VITESSE_X05://x0,5
+ 509   2               if(direction==0)//X1.5 car la terre continue de tourner et le moteur vas en sens inverse (1.5-1=0.5)
+ 510   2               {
+ 511   3                  
+ 512   3                  gVitesseRAH=VITESSE_RA_X1_5_HIGH;
+ 513   3                  gVitesseRAL=VITESSE_RA_X1_5_LOW;
+ 514   3               }
+ 515   2               else
+ 516   2               {
+ 517   3                  gVitesseRAH=VITESSE_RA_X05_HIGH;
+ 518   3                  gVitesseRAL=VITESSE_RA_X05_LOW;
+ 519   3               }
+ 520   2            break;
+ 521   2            case VITESSE_X2://x2
+ 522   2               gVitesseRAH=VITESSE_RA_X2_HIGH;
+ 523   2               gVitesseRAL=VITESSE_RA_X2_LOW;
+ 524   2            break;
+ 525   2            case VITESSE_X8://x8
+ 526   2               gVitesseRAH=VITESSE_RA_X8_HIGH;
+ 527   2               gVitesseRAL=VITESSE_RA_X8_LOW;
+ 528   2            break;
+ 529   2            case VITESSE_X16://x16
+ 530   2               gVitesseRAH=VITESSE_RA_X16_HIGH;
+ 531   2               gVitesseRAL=VITESSE_RA_X16_LOW;
+ 532   2            break;
+ 533   2            case VITESSE_MAX://max
+ 534   2               gVitesseRAH=VITESSE_RA_MAX_HIGH;
+ 535   2               gVitesseRAL=VITESSE_RA_MAX_LOW;
+ 536   2            break;
+ 537   2            default://suivi sideral
+ 538   2               gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
+ 539   2               gVitesseRAL=VITESSE_RA_SIDERAL_LOW;      
+ 540   2            break;
+ 541   2         }
+ 542   1         TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
+ 543   1         TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
+ 544   1         TR0=1;
+ 545   1      }
+ 546          
+ 547          /*---------------------------------------------------------------------------*-
+ 548          setMotorDEC()
+ 549          -----------------------------------------------------------------------------
+ 550          Descriptif: Applique une vitesse predefinit au moteur et une direction
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 10  
+
+ 551          Entree    :
+ 552                      - unsigned char vitesse (4 ... 10)
+ 553                      - bit direction         (0 ... 1)
+ 554          Sortie    : --
+ 555          -*---------------------------------------------------------------------------*/
+ 556          void setMotorDEC(unsigned char vitesse,bit direction)
+ 557          {
+ 558   1         unsigned int i=0;
+ 559   1         SFRPAGE   = CONFIG_PAGE;
+ 560   1         TMR4CN&=~0x04;
+ 561   1         SFRPAGE   = LEGACY_PAGE;
+ 562   1         STEP_DEC=0;
+ 563   1         for(i=0;i<1000;i++);//voire figure 1
+ 564   1         NSLEEP_DEC=1;//Attention il faut 1.7ms au chip pour se rallumer
+ 565   1         DIR_DEC=direction;
+ 566   1         for(i=0;i<1000;i++);//voire figure 1
+ 567   1         switch(vitesse)
+ 568   1         {
+ 569   2            case VITESSE_X05://x0,5
+ 570   2               gVitesseDEC=VITESSE_DEC_X05;
+ 571   2               SFRPAGE   = CONFIG_PAGE;
+ 572   2               TMR4CN|=0x04;
+ 573   2               SFRPAGE   = LEGACY_PAGE;
+ 574   2            break;
+ 575   2            case VITESSE_X2://x2
+ 576   2               gVitesseDEC=VITESSE_DEC_X2;
+ 577   2               SFRPAGE   = CONFIG_PAGE;
+ 578   2               TMR4CN|=0x04;
+ 579   2               SFRPAGE   = LEGACY_PAGE;
+ 580   2            break;
+ 581   2            case VITESSE_X8://x8
+ 582   2               gVitesseDEC=VITESSE_DEC_X8;
+ 583   2               SFRPAGE   = CONFIG_PAGE;
+ 584   2               TMR4CN|=0x04;
+ 585   2               SFRPAGE   = LEGACY_PAGE;
+ 586   2            break;
+ 587   2            case VITESSE_X16://x16
+ 588   2               gVitesseDEC=VITESSE_DEC_X16;
+ 589   2               SFRPAGE   = CONFIG_PAGE;
+ 590   2               TMR4CN|=0x04;
+ 591   2               SFRPAGE   = LEGACY_PAGE;
+ 592   2            break;
+ 593   2            case VITESSE_MAX://max
+ 594   2               gVitesseDEC=VITESSE_DEC_MAX;
+ 595   2               SFRPAGE   = CONFIG_PAGE;
+ 596   2               TMR4CN|=0x04;
+ 597   2               SFRPAGE   = LEGACY_PAGE;
+ 598   2            break;
+ 599   2            default://suivi sideral
+ 600   2              stopMotorDec(); 
+ 601   2            break;
+ 602   2         }
+ 603   1      }
+ 604          
+ 605          /*---------------------------------------------------------------------------*-
+ 606          stopMotorDec()
+ 607          -----------------------------------------------------------------------------
+ 608          Descriptif: Stop le moteur de declinaison et met le drv8825 en sommeil
+ 609          Entree    : --
+ 610          Sortie    : --
+ 611          -*---------------------------------------------------------------------------*/
+ 612          void stopMotorDec()
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 11  
+
+ 613          {
+ 614   1         SFRPAGE   = CONFIG_PAGE;
+ 615   1         TMR4CN&=~0x04;
+ 616   1         SFRPAGE   = LEGACY_PAGE;
+ 617   1         NSLEEP_DEC=0;
+ 618   1      }
+ 619          
+ 620          /*---------------------------------------------------------------------------*-
+ 621          decodeUartRaspberryPi()
+ 622          -----------------------------------------------------------------------------
+ 623          Descriptif: Decode les message envoyer par la raspberry PI
+ 624          Entree    : -- (Utilisation de varible globale)
+ 625          Sortie    : --
+ 626          -*---------------------------------------------------------------------------*/
+ 627          void decodeUartRaspberryPi()
+ 628          {
+ 629   1         if((gUart0Rx[0]=='R')&&(gUart0Rx[1]=='A'))
+ 630   1         {
+ 631   2            if((gUart0Rx[2]=='+'))
+ 632   2            {
+ 633   3               setMotorRA(gVitesseDeplacement,gDirRa);
+ 634   3            }
+ 635   2            else if (gUart0Rx[2]=='-')
+ 636   2            {
+ 637   3               setMotorRA(gVitesseDeplacement,!gDirRa);
+ 638   3            }
+ 639   2            else//=='0'
+ 640   2            {
+ 641   3               setMotorRA(gAstrSuivi,gDirRa);
+ 642   3            }
+ 643   2         }
+ 644   1         else if((gUart0Rx[0]=='D')&&(gUart0Rx[1]=='E')&&(gUart0Rx[2]=='C'))
+ 645   1         {
+ 646   2            if((gUart0Rx[3]=='+'))
+ 647   2            {
+ 648   3               setMotorDEC(gVitesseDeplacement,gDirDec);
+ 649   3            }
+ 650   2            else if (gUart0Rx[3]=='-')
+ 651   2            {
+ 652   3               setMotorDEC(gVitesseDeplacement,!gDirDec);
+ 653   3            }
+ 654   2            else//=='0'
+ 655   2            {
+ 656   3               stopMotorDec();
+ 657   3            }
+ 658   2         }
+ 659   1         else//Ne reconnait pas la commande, fais suivre au slave
+ 660   1         {
+ 661   2            //gUart1Tx[0]
+ 662   2            strcpy(gUart1Tx,gUart0Rx);
+ 663   2            SCON1|=0x02;
+ 664   2         }
+ 665   1      }
+ 666          
+ 667          /*---------------------------------------------------------------------------*-
+ 668             UART_Init ()
+ 669            -----------------------------------------------------------------------------
+ 670             Descriptif: Configure l'UART par ces valeur par defaut
+ 671                         (il ne fait rien)
+ 672             Entr�e    : --
+ 673             Sortie    : --
+ 674          -*---------------------------------------------------------------------------*/
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 12  
+
+ 675          void UART_Init()
+ 676          {
+ 677   1          SCON0     = 0x10;
+ 678   1          //SBRLL1    = 0x3C;
+ 679   1          //SBRLH1    = 0xF6;
+ 680   1          //SCON1     = 0x10;
+ 681   1          //SBCON1    = 0x43;
+ 682   1         
+ 683   1         //57600 Uart1
+ 684   1          SBRLL1    = 0x5F;
+ 685   1          SBRLH1    = 0xFE;
+ 686   1          SCON1     = 0x10;
+ 687   1          SBCON1    = 0x43;
+ 688   1         
+ 689   1         //115200 Uart1
+ 690   1      // SBRLL1    = 0x30;
+ 691   1      //    SBRLH1    = 0xFF;
+ 692   1      //    SCON1     = 0x10;
+ 693   1      //    SBCON1    = 0x43;
+ 694   1      }
+ 695          
+ 696          /*---------------------------------------------------------------------------*-
+ 697          Init_int ()
+ 698          -----------------------------------------------------------------------------
+ 699          Descriptif:
+ 700          Interruption 0 : P0.6 - Descendant
+ 701          Interruption 1 : P0.7 - Descendant
+ 702          Entree    : --
+ 703          Sortie    : --
+ 704          -*---------------------------------------------------------------------------*/
+ 705          void Init_int()
+ 706          {
+ 707   1         EX0=0;//Autorise l'interruption externe 0
+ 708   1         EX1=0;//Autorise l'interruption externe 1
+ 709   1         IT0=1;//interruption 0 sur flanc
+ 710   1         IT1=1;//interruption 1 sur flanc
+ 711   1         IT01CF= IT01CF &~ 0xFF;//Clear le registre des interruption
+ 712   1                               // +-------- INT1 Polarite
+ 713   1                               // |+++----- Selection du canal P0.x de l'interruption 1
+ 714   1                               // ||||+---- INT0 Polarite
+ 715   1                               // |||||+++- Selection du canal P0.x de l'interruption 0
+ 716   1                               // ||||||||  (000: Select P0.0)
+ 717   1                               // ||||||||  ...
+ 718   1                               // ||||||||  ...
+ 719   1                               // ||||||||  (111: Select P0.7)  
+ 720   1         IT01CF= IT01CF | 0x76;// 01110110
+ 721   1      
+ 722   1         IE0=0; IE0=0; IE0=0;//clear du flag d'interruption 0 (3* pour eviter les bug)
+ 723   1         IE1=0; IE1=0; IE1=0;//clear du flag d'interruption 1 (3* pour eviter les bug)
+ 724   1         EX0=1;//Active l'interruption 0
+ 725   1         EX1=1;//Active l'interruption 1
+ 726   1      }
+ 727          
+ 728          /*---------------------------------------------------------------------------*-
+ 729          TimerInit ()
+ 730          -----------------------------------------------------------------------------
+ 731          Descriptif:
+ 732          Timer 0 : Mode 16bit - Prediv 48 - vitesse definit par gVitesseRAH-L
+ 733          Timer 1 : Mode 8bit - Prediv 48 - baudrate 57600
+ 734          Entree    : --
+ 735          Sortie    : --
+ 736          -*---------------------------------------------------------------------------*/
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 13  
+
+ 737          void TimerInit()
+ 738          {
+ 739   1         //Timer 0 et 1
+ 740   1         TR0 = 0;//Stop le timer 0
+ 741   1         TR1 = 0;
+ 742   1         ET0 = 0;//Desactive l'interruption du timer 0
+ 743   1         ET1=0;
+ 744   1         TMOD &= ~0x0F;//Clear le registre du mode 0
+ 745   1                      // +-------- Timer 1 Gate Control
+ 746   1                      // |+------- Counter/Timer1 Select
+ 747   1                      // ||++----- choix du mode du timer 1
+ 748   1                      // ||||+---- Timer 0 Gate Control
+ 749   1                      // |||||+--- Counter/Timer0 Select
+ 750   1                      // ||||||++- choix du mode du timer 0
+ 751   1                      // ||||||||  (00 : Mode 0, 13-bit Counter/Timer)
+ 752   1                      // ||||||||  (01 : Mode 1, 16-bit Counter/Timer)
+ 753   1                      // ||||||||  (10 : Mode 2, 8-bit Counter/Timer with Auto-Reload)
+ 754   1                      // ||||||||  (11 : Mode 3, Two 8-bit Counter/Timers)  
+ 755   1         TMOD |= 0x21;// 00000001
+ 756   1         CKCON &= ~0x07;//clear les bit de selection pour les timer 0 et 1 et le prescalaire
+ 757   1                       // +-------- Timer 3 High Byte Clock Select.
+ 758   1                       // |+------- Timer 3 Low Byte Clock Select.
+ 759   1                       // ||+------ Timer 2 High Byte Clock Select
+ 760   1                       // |||+----- Timer 2 Low Byte Clock Select.
+ 761   1                       // ||||+---- Timer 1 Clock Select.
+ 762   1                       // |||||+--- Timer 0 Clock Select.
+ 763   1                       // ||||||++- Timer 0/1 Prescale Bits.
+ 764   1                       // ||||||||  (00: System clock divided by 12)
+ 765   1                       // ||||||||  (01: System clock divided by 4)
+ 766   1                       // ||||||||  (10: System clock divided by 48)
+ 767   1                       // ||||||||  (11: External clock divided by 8 
+ 768   1         CKCON |= 0x02;// 00000010
+ 769   1         TH0=gVitesseRAH;//Charge la valeur dans le registre MSB du timer 0
+ 770   1         TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
+ 771   1         TH1=TL1=BAUD_UART0;//Charge la valeur dans le registre LSB du timer 0
+ 772   1         TF0 = 0;//clear le flag d'interruption du timer 0
+ 773   1         TF1 = 0;
+ 774   1         ET0 = 1;//Autorise l'interruption du timer 0
+ 775   1         //ET1 = 1;
+ 776   1         
+ 777   1         //Init Timer 4 
+ 778   1         SFRPAGE   = CONFIG_PAGE;
+ 779   1         TMR4CN = 0x00;//Mode 16 bit auto reload
+ 780   1         TMR4RLH=0xF9;
+ 781   1         TMR4RLL=0x1F;
+ 782   1         SFRPAGE   = LEGACY_PAGE;
+ 783   1      }
+ 784          
+ 785          /*---------------------------------------------------------------------------*-
+ 786             ClockInit ()
+ 787            -----------------------------------------------------------------------------
+ 788             Descriptif: Initialisation du mode de fonctionnement du clock syst�me 
+ 789                   choix : SYSCLK : oscillateur HF interne � 48 MHz
+ 790          
+ 791             Entr�e    : --
+ 792             Sortie    : --
+ 793          -*---------------------------------------------------------------------------*/
+ 794          void ClockInit()
+ 795          {  
+ 796   1         
+ 797   1                           // +--------- clock interne LF
+ 798   1                           // | (1 : oscillateur LF : enable)
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 14  
+
+ 799   1                           // | (0 : oscillateur LF: desable)
+ 800   1                           // |+-------- en lecture seule 1 : signal que oscillateur 
+ 801   1                           // ||         interne fonctionne � sa valeur de prog.
+ 802   1                           // ||++++---- r�glage fin de la fr�quence de l'osc. LF
+ 803   1                           // ||||||++-- choix du diviseur :
+ 804   1                           // ||||||||       (00 : Osc LF /8 -> f = 10 KHz)
+ 805   1                           // ||||||||       (01 : Osc LF /4 -> f = 20 KHz)
+ 806   1                           // ||||||||       (10 : Osc LF /2 -> f = 40 KHz)
+ 807   1                           // ||||||||       (11 : Osc LF /1 -> f = 80 KHz)
+ 808   1         OSCLCN |= 0x00;   // 00000000 
+ 809   1      
+ 810   1                           // +--------- non utilis�
+ 811   1                           // |+++------ S�lection du clock USB 
+ 812   1                           // ||||           (010 : Oscil ext. : limiter la conso.)
+ 813   1                           // ||||+----- clock out select
+ 814   1                           // |||||          (0 : sortie sysclk non synchronis�e)
+ 815   1                           // |||||          (1 : sortie sysclk synchronis�e)
+ 816   1                           // |||||+++-- choix du clock syst�me
+ 817   1                           // ||||||||       (000 : Oscil interne 48/4  = 1.5, 3, 6 ou
+ 818   1                           // ||||||||              12 MHz selon le choix du diviseur 
+ 819   1                           // ||||||||              dans OSCICN
+ 820   1                           // ||||||||       (001 : Oscil externe  = x  MHz)
+ 821   1                           // ||||||||       (010 : Oscil interne 48/2 = 24 MHz)
+ 822   1                           // ||||||||       (011 : Oscil interne 48/1 = 48 MHz)    
+ 823   1                           // ||||||||       (100 : Oscil interne LF = 80 KHz max)   
+ 824   1                           // ||||||||       (101 � 111 : r�serv�s)   
+ 825   1         CLKSEL = 0x03;    // 00000011  
+ 826   1      
+ 827   1                           // +--------- clock interne HF
+ 828   1                           // |              (1 : oscillateur LF : enable)
+ 829   1                           // |              (0 : oscillateur LF: desable)
+ 830   1                           // |+-------- en lecture seule 1 : signal que oscillateur 
+ 831   1                           // ||              interne fonctionne � sa valeur de prog.
+ 832   1                           // ||+------- 1 : suspend l'oscillateur interne
+ 833   1                           // |||+++---- non utilis�s
+ 834   1                           // ||||||++-- choix du diviseur :
+ 835   1                           // ||||||||       (00 : 12/8 -> f =  1.5 MHz)
+ 836   1                           // ||||||||       (01 : 12/4 -> f =  3   MHz)
+ 837   1                           // ||||||||       (10 : 12/2 -> f =  6   MHz)
+ 838   1                           // ||||||||       (11 : 12/1 -> f = 12   MHz)
+ 839   1         OSCICN = 0xC3;    // 11000011 
+ 840   1         
+ 841   1         FLSCL = 0x90;     // A utiliser si le clock system est � 48 MHz
+ 842   1      
+ 843   1      } // ClockInit ----------------------------------------------------------------
+ 844          
+ 845          
+ 846          //-----------------------------------------------------------------------------
+ 847          // SMBus_Init
+ 848          //-----------------------------------------------------------------------------
+ 849          //
+ 850          // Return Value : None
+ 851          // Parameters   : None
+ 852          //
+ 853          // SMBus configured as follows:
+ 854          // - SMBus enabled
+ 855          // - Slave mode inhibited
+ 856          // - Timer2 used as clock source. The maximum SCL frequency will be
+ 857          //   approximately 1/3 the Timer1 overflow rate
+ 858          // - Setup and hold time extensions enabled
+ 859          // - Bus Free and SCL Low timeout detection enabled
+ 860          //
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 15  
+
+ 861          void SMBus_Init (void)
+ 862          {
+ 863   1         SMB0CF = 0x5E;                      // Use Timer2 overflows as SMBus clock
+ 864   1                                             // source;
+ 865   1                                             // Disable slave mode;
+ 866   1                                             // Enable setup & hold time
+ 867   1                                             // extensions;
+ 868   1                                             // Enable SMBus Free timeout detect;
+ 869   1                                             // Enable SCL low timeout detect;
+ 870   1      
+ 871   1         SMB0CF |= 0x80;                     // Enable SMBus;
+ 872   1      }
+ 873          
+ 874          
+ 875          //-----------------------------------------------------------------------------
+ 876          // Timer2_Init
+ 877          //-----------------------------------------------------------------------------
+ 878          //
+ 879          // Return Value : None
+ 880          // Parameters   : None
+ 881          //
+ 882          // Timer2 configured as the SMBus clock source as follows:
+ 883          // - Timer2 in 8-bit auto-reload mode
+ 884          // - SYSCLK or SYSCLK / 4 as Timer1 clock source
+ 885          // - Timer2 overflow rate => 3 * SMB_FREQUENCY
+ 886          // - The resulting SCL clock rate will be ~1/3 the Timer2 overflow rate
+ 887          // - Timer2 enabled
+ 888          //
+ 889          void Timer2_Init (void)
+ 890          {
+ 891   1         TMR2CN    |= 0x0C;//0x0C
+ 892   1         TMR2RLH   |= 0x7B;//0x7B
+ 893   1      }
+ 894          
+ 895          //-----------------------------------------------------------------------------
+ 896          // Timer3_Init
+ 897          //-----------------------------------------------------------------------------
+ 898          //
+ 899          // Return Value : None
+ 900          // Parameters   : None
+ 901          //
+ 902          // Timer3 configured for use by the SMBus low timeout detect feature as
+ 903          // follows:
+ 904          // - Timer3 in 16-bit auto-reload mode
+ 905          // - SYSCLK/12 as Timer3 clock source
+ 906          // - Timer3 reload registers loaded for a 25ms overflow period
+ 907          // - Timer3 pre-loaded to overflow after 25ms
+ 908          // - Timer3 enabled
+ 909          //
+ 910          void Timer3_Init (void)
+ 911          {
+ 912   1         TMR3CN = 0x00;                      // Timer3 configured for 16-bit auto-
+ 913   1                                             // reload, low-byte interrupt disabled
+ 914   1      
+ 915   1         CKCON &= ~0x40;                     // Timer3 uses SYSCLK/12
+ 916   1      
+ 917   1         TMR3RL = -(SYSCLK/12/40);           // Timer3 configured to overflow after
+ 918   1         TMR3 = TMR3RL;                      // ~25ms (for SMBus low timeout detect):
+ 919   1                                             // 1/.025 = 40
+ 920   1      
+ 921   1         EIE1 |= 0x80;                       // Timer3 interrupt enable
+ 922   1         TMR3CN |= 0x04;                     // Start Timer3
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 16  
+
+ 923   1      }
+ 924          
+ 925          //-----------------------------------------------------------------------------
+ 926          // SMBus Interrupt Service Routine (ISR)
+ 927          //-----------------------------------------------------------------------------
+ 928          //
+ 929          // SMBus ISR state machine
+ 930          // - Master only implementation - no slave or arbitration states defined
+ 931          // - All incoming data is written to global variable array <gSMBDataIN>
+ 932          // - All outgoing data is read from global variable array <gSMBDataOUT>
+ 933          //
+ 934          void SMBus_ISR (void) interrupt 7
+ 935          {
+ 936   1         bit FAIL = 0;                       // Used by the ISR to flag failed
+ 937   1                                             // transfers
+ 938   1      
+ 939   1         static unsigned char sent_byte_counter;
+ 940   1         static unsigned char rec_byte_counter;
+ 941   1      
+ 942   1         if (ARBLOST0 == 0)                   // Check for errors
+ 943   1         {
+ 944   2            // Normal operation
+ 945   2            switch (SMB0CN & 0xF0)           // Status vector
+ 946   2            {
+ 947   3               // Master Transmitter/Receiver: START condition transmitted.
+ 948   3               case SMB_MTSTA:
+ 949   3                  SMB0DAT = gTarget;          // Load address of the gTarget slave
+ 950   3                  SMB0DAT &= 0xFE;           // Clear the LSB of the address for the
+ 951   3                                             // R/W bit
+ 952   3                  SMB0DAT |= SMB_RW;         // Load R/W bit
+ 953   3                  STA0 = 0;                   // Manually clear START bit
+ 954   3                  rec_byte_counter = 1;      // Reset the counter
+ 955   3                  sent_byte_counter = 1;     // Reset the counter
+ 956   3                  break;
+ 957   3      
+ 958   3               // Master Transmitter: Data byte transmitted
+ 959   3               case SMB_MTDB:
+ 960   3                  if (ACK0)                   // Slave ACK0?
+ 961   3                  {
+ 962   4                     if (SMB_RW == WRITE)    // If this transfer is a WRITE,
+ 963   4                     {
+ 964   5                        if (sent_byte_counter <= gSMBNumBytesToWR)
+ 965   5                        {
+ 966   6                           // send data byte
+ 967   6                           SMB0DAT = gSMBDataOUT[sent_byte_counter-1];
+ 968   6                           sent_byte_counter++;
+ 969   6                        }
+ 970   5                        else
+ 971   5                        {
+ 972   6                           STO0 = 1;          // Set STO0 to terminate transfer
+ 973   6                           SMB_BUSY = 0;     // And free SMBus interface
+ 974   6                        }
+ 975   5                     }
+ 976   4                     else {}                 // If this transfer is a READ,
+ 977   4                                             // proceed with transfer without
+ 978   4                                             // writing to SMB0DAT (switch
+ 979   4                                             // to receive mode)
+ 980   4      
+ 981   4      
+ 982   4                  }
+ 983   3                  else                       // If slave NACK,
+ 984   3                  {
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 17  
+
+ 985   4                     STO0 = 1;                // Send STOP condition, followed
+ 986   4                     STA0 = 1;                // By a START
+ 987   4                     NUM_ERRORS++;           // Indicate error
+ 988   4                  }
+ 989   3                  break;
+ 990   3      
+ 991   3               // Master Receiver: byte received
+ 992   3               case SMB_MRDB:
+ 993   3                  if (rec_byte_counter < gSMBNumBytesToRD)
+ 994   3                  {
+ 995   4                     gSMBDataIN[rec_byte_counter-1] = SMB0DAT; // Store received
+ 996   4                                                                // byte
+ 997   4                     ACK0 = 1;                // Send ACK0 to indicate byte received
+ 998   4                     rec_byte_counter++;     // Increment the byte counter
+ 999   4                  }
+1000   3                  else
+1001   3                  {
+1002   4                     gSMBDataIN[rec_byte_counter-1] = SMB0DAT; // Store received
+1003   4                                                                // byte
+1004   4                     SMB_BUSY = 0;           // Free SMBus interface
+1005   4                     ACK0 = 0;                // Send NACK to indicate last byte
+1006   4                                             // of this transfer
+1007   4      
+1008   4                     STO0 = 1;                // Send STOP to terminate transfer
+1009   4                  }
+1010   3                  break;
+1011   3      
+1012   3               default:
+1013   3                  FAIL = 1;                  // Indicate failed transfer
+1014   3                                             // and handle at end of ISR
+1015   3                  break;
+1016   3      
+1017   3            } // end switch
+1018   2         }
+1019   1         else
+1020   1         {
+1021   2            // ARBLOST = 1, error occurred... abort transmission
+1022   2            FAIL = 1;
+1023   2         } // end ARBLOST if
+1024   1      
+1025   1         if (FAIL)                           // If the transfer failed,
+1026   1         {
+1027   2            SMB0CF &= ~0x80;                 // Reset communication
+1028   2            SMB0CF |= 0x80;
+1029   2            STA0 = 0;
+1030   2            STO0 = 0;
+1031   2            ACK0 = 0;
+1032   2      
+1033   2            SMB_BUSY = 0;                    // Free SMBus
+1034   2      
+1035   2            FAIL = 0;
+1036   2            //LED = 0;
+1037   2      
+1038   2            NUM_ERRORS++;                    // Indicate an error occurred
+1039   2         }
+1040   1      
+1041   1         SI0 = 0;                             // Clear interrupt flag
+1042   1      }
+1043          
+1044          //-----------------------------------------------------------------------------
+1045          // Timer3 Interrupt Service Routine (ISR)
+1046          //-----------------------------------------------------------------------------
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 18  
+
+1047          //
+1048          // A Timer3 interrupt indicates an SMBus SCL low timeout.
+1049          // The SMBus is disabled and re-enabled here
+1050          //
+1051          void Timer3_ISR (void) interrupt 14
+1052          {
+1053   1         SMB0CF &= ~0x80;                    // Disable SMBus
+1054   1         SMB0CF |= 0x80;                     // Re-enable SMBus
+1055   1         TMR3CN &= ~0x80;                    // Clear Timer3 interrupt-pending
+1056   1                                             // flag
+1057   1         STA0 = 0;
+1058   1         SMB_BUSY = 0;                       // Free SMBus
+1059   1      }
+1060          
+1061          //-----------------------------------------------------------------------------
+1062          // Support Functions
+1063          //-----------------------------------------------------------------------------
+1064          
+1065          //-----------------------------------------------------------------------------
+1066          // SMB_Write
+1067          //-----------------------------------------------------------------------------
+1068          //
+1069          // Return Value : None
+1070          // Parameters   : None
+1071          //
+1072          // Writes a single byte to the slave with address specified by the <gTarget>
+1073          // variable.
+1074          // Calling sequence:
+1075          // 1) Write gTarget slave address to the <gTarget> variable
+1076          // 2) Write outgoing data to the <gSMBDataOUT> variable array
+1077          // 3) Call SMB_Write()
+1078          //
+1079          void SMB_Write (void)
+1080          {
+1081   1         while (SMB_BUSY);                   // Wait for SMBus to be free.
+1082   1         SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+1083   1         SMB_RW = 0;                         // Mark this transfer as a WRITE
+1084   1         STA0 = 1;                            // Start transfer
+1085   1      }
+1086          
+1087          //-----------------------------------------------------------------------------
+1088          // SMB_Read
+1089          //-----------------------------------------------------------------------------
+1090          //
+1091          // Return Value : None
+1092          // Parameters   : None
+1093          //
+1094          // Reads a single byte from the slave with address specified by the <gTarget>
+1095          // variable.
+1096          // Calling sequence:
+1097          // 1) Write gTarget slave address to the <gTarget> variable
+1098          // 2) Call SMB_Write()
+1099          // 3) Read input data from <gSMBDataIN> variable array
+1100          //
+1101          void SMB_Read (void)
+1102          {
+1103   1         while (SMB_BUSY);                   // Wait for bus to be free.
+1104   1         SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+1105   1         SMB_RW = 1;                         // Mark this transfer as a READ
+1106   1      
+1107   1         STA0 = 1;                            // Start transfer
+1108   1      
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 19  
+
+1109   1         while (SMB_BUSY);                   // Wait for transfer to complete
+1110   1      }
+1111          
+1112          
+1113          /*---------------------------------------------------------------------------*-
+1114             PortInit ()
+1115            -----------------------------------------------------------------------------
+1116             Descriptif: autorise le fonctionnement du crossbar et de l'uart0
+1117             Entr�e    : --
+1118             Sortie    : --
+1119          -*---------------------------------------------------------------------------*/
+1120          void PortInit () 
+1121          {
+1122   1         // P0.0  -  SDA (SMBus0), Open-Drain, Digital
+1123   1          // P0.1  -  SCL (SMBus0), Push-Pull,  Digital
+1124   1          // P0.2  -  TX1 (UART1), Push-Pull,  Digital
+1125   1          // P0.3  -  RX1 (UART1), Open-Drain, Digital
+1126   1          // P0.4  -  TX0 (UART0), Push-Pull,  Digital
+1127   1          // P0.5  -  RX0 (UART0), Open-Drain, Digital
+1128   1          // P0.6  -  Unassigned,  Open-Drain, Digital
+1129   1          // P0.7  -  Unassigned,  Open-Drain, Digital
+1130   1      
+1131   1          // P1.0  -  Skipped,     Push-Pull,  Digital
+1132   1          // P1.1  -  Skipped,     Push-Pull,  Digital
+1133   1          // P1.2  -  Skipped,     Push-Pull,  Digital
+1134   1          // P1.3  -  Skipped,     Open-Drain, Digital
+1135   1          // P1.4  -  Skipped,     Push-Pull,  Digital
+1136   1          // P1.5  -  Skipped,     Push-Pull,  Digital
+1137   1          // P1.6  -  Skipped,     Push-Pull,  Digital
+1138   1          // P1.7  -  Skipped,     Open-Drain, Digital
+1139   1      
+1140   1          // P2.0  -  Skipped,     Open-Drain, Digital
+1141   1          // P2.1  -  Skipped,     Open-Drain, Digital
+1142   1          // P2.2  -  Skipped,     Open-Drain, Digital
+1143   1          // P2.3  -  Skipped,     Open-Drain, Digital
+1144   1          // P2.4  -  Unassigned,  Open-Drain, Digital
+1145   1          // P2.5  -  Unassigned,  Open-Drain, Digital
+1146   1          // P2.6  -  Unassigned,  Open-Drain, Digital
+1147   1          // P2.7  -  Unassigned,  Open-Drain, Digital
+1148   1      
+1149   1          // P3.0  -  Unassigned,  Open-Drain, Digital
+1150   1      
+1151   1          P0MDOUT   = 0x16;
+1152   1          P1MDOUT   = 0xDD;//0xFF = schema
+1153   1          P1SKIP    = 0xFF;
+1154   1          P2SKIP    = 0x0F;
+1155   1          XBR0      |= 0x05;
+1156   1          XBR1      |= 0x40;
+1157   1          XBR2      |= 0x01;
+1158   1      
+1159   1      } // PortInit ----------------------------------------------------------------
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2150    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     40    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     41    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =     12    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.53.0.0   MASTER_TELESCOPE_V2                                               06/03/2019 00:42:18 PAGE 20  
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
