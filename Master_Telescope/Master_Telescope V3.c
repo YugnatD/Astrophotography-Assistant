@@ -87,9 +87,11 @@ unsigned long NUM_ERRORS;              // Counter for the number of errors.
 
 
 //Gestion Moteur
-unsigned char gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-unsigned char gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
-unsigned int gVitesseDEC=VITESSE_DEC_MAX;
+unsigned char gVitesseRAH=VITESSE_SIDERAL_HIGH;
+unsigned char gVitesseRAL=VITESSE_SIDERAL_LOW;
+unsigned char gVitesseDECH=VITESSE_SIDERAL_HIGH;
+unsigned char gVitesseDECL=VITESSE_SIDERAL_HIGH;
+//unsigned int gVitesseDEC=VITESSE_DEC_MAX;
 unsigned char gVitesseDeplacement=VITESSE_MAX;
 
 //Uart
@@ -303,13 +305,12 @@ void timer4() interrupt 19
    static unsigned int cpt=0;
    SFRPAGE   = CONFIG_PAGE;
    TMR4CN &=~0xC0;//Clear pending flag
+   TMR4CN &=~0x04;//arrette le timer
+   TMR4RLH=gVitesseDECH;
+   TMR4RLL=gVitesseDECL;
+   TMR4CN|=0x04;//relance le timer
    SFRPAGE   = LEGACY_PAGE;
-   cpt++;
-   if(cpt>=gVitesseDEC)
-   {
-      STEP_DEC=!STEP_DEC;
-      cpt=0;
-   }
+   STEP_DEC=!STEP_DEC;
 }
 /*---------------------------------------------------------------------------*-
 uart0()
@@ -479,62 +480,114 @@ void setMotorRA(unsigned char vitesse,bit direction)
 	//for(i=0;i<;i++);//voire figure 1
    switch(vitesse)
    {
-      case VITESSE_RA_SIDERAL://suivi sideral
-         gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-         gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
+      case VITESSE_SIDERAL://suivi sideral
+         gVitesseRAH=VITESSE_SIDERAL_HIGH;
+         gVitesseRAL=VITESSE_SIDERAL_LOW;
       break;
-      case VITESSE_RA_LUNE://suivi Lune
-         gVitesseRAH=VITESSE_RA_LUNE_HIGH;
-         gVitesseRAL=VITESSE_RA_LUNE_LOW;
+      case VITESSE_LUNE://suivi Lune
+         gVitesseRAH=VITESSE_LUNE_HIGH;
+         gVitesseRAL=VITESSE_LUNE_LOW;
       break;
-      case VITESSE_RA_SOLEIL://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_SOLEIL_HIGH;//
-         gVitesseRAL=VITESSE_RA_SOLEIL_LOW;
+      case VITESSE_SOLEIL://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_SOLEIL_HIGH;//
+         gVitesseRAL=VITESSE_SOLEIL_LOW;
       break;
-      case VITESSE_RA_SATURNE://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_SATURNE_HIGH;//
-         gVitesseRAL=VITESSE_RA_SATURNE_LOW;
+      case VITESSE_SATURNE://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_SATURNE_HIGH;//
+         gVitesseRAL=VITESSE_SATURNE_LOW;
       break;
-      case VITESSE_RA_JUPITER://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_JUPITER_HIGH;//
-         gVitesseRAL=VITESSE_RA_JUPITER_LOW;
+      case VITESSE_JUPITER://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_JUPITER_HIGH;//
+         gVitesseRAL=VITESSE_JUPITER_LOW;
       break;
-      case VITESSE_RA_ISS://suivi ISS
-         gVitesseRAH=VITESSE_RA_ISS_HIGH;
-         gVitesseRAL=VITESSE_RA_ISS_LOW;
+      case VITESSE_ISS://suivi ISS
+         gVitesseRAH=VITESSE_ISS_HIGH;
+         gVitesseRAL=VITESSE_ISS_LOW;
+      break;
+      case VITESSE_X01://x0,1
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_1_HIGH;
+            gVitesseRAL=VITESSE_X1_1_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X01_HIGH;
+            gVitesseRAL=VITESSE_X01_LOW;
+         }
+      break;
+      case VITESSE_X02://x0,2
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_2_HIGH;
+            gVitesseRAL=VITESSE_X1_2_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X02_HIGH;
+            gVitesseRAL=VITESSE_X02_LOW;
+         }
+      break;
+      case VITESSE_X03://x0,3
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_3_HIGH;
+            gVitesseRAL=VITESSE_X1_3_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X03_HIGH;
+            gVitesseRAL=VITESSE_X03_LOW;
+         }
+      break;
+      case VITESSE_X04://x0,4
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_4_HIGH;
+            gVitesseRAL=VITESSE_X1_4_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X04_HIGH;
+            gVitesseRAL=VITESSE_X04_LOW;
+         }
       break;
       case VITESSE_X05://x0,5
          DIR_RA=0;
          if(direction==0)
          {
-            gVitesseRAH=VITESSE_RA_X1_5_HIGH;
-            gVitesseRAL=VITESSE_RA_X1_5_HIGH;
+            gVitesseRAH=VITESSE_X1_5_HIGH;
+            gVitesseRAL=VITESSE_X1_5_LOW;
          }
          else
          {
-            gVitesseRAH=VITESSE_RA_X05_HIGH;
-            gVitesseRAL=VITESSE_RA_X05_LOW;
+            gVitesseRAH=VITESSE_X05_HIGH;
+            gVitesseRAL=VITESSE_X05_LOW;
          }
       break;
       case VITESSE_X2://x2
-         gVitesseRAH=VITESSE_RA_X2_HIGH;
-         gVitesseRAL=VITESSE_RA_X2_LOW;
+         gVitesseRAH=VITESSE_X2_HIGH;
+         gVitesseRAL=VITESSE_X2_LOW;
       break;
       case VITESSE_X8://x8
-         gVitesseRAH=VITESSE_RA_X8_HIGH;
-         gVitesseRAL=VITESSE_RA_X8_LOW;
+         gVitesseRAH=VITESSE_X8_HIGH;
+         gVitesseRAL=VITESSE_X8_LOW;
       break;
       case VITESSE_X16://x16
-         gVitesseRAH=VITESSE_RA_X16_HIGH;
-         gVitesseRAL=VITESSE_RA_X16_LOW;
+         gVitesseRAH=VITESSE_X16_HIGH;
+         gVitesseRAL=VITESSE_X16_LOW;
       break;
       case VITESSE_MAX://max
-         gVitesseRAH=VITESSE_RA_MAX_HIGH;
-         gVitesseRAL=VITESSE_RA_MAX_LOW;
+         gVitesseRAH=VITESSE_MAX_HIGH;
+         gVitesseRAL=VITESSE_MAX_LOW;
       break;
       default://suivi sideral
-         gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-         gVitesseRAL=VITESSE_RA_SIDERAL_LOW;      
+         gVitesseRAH=VITESSE_SIDERAL_HIGH;
+         gVitesseRAL=VITESSE_SIDERAL_LOW;      
       break;
    }
 	TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
@@ -564,32 +617,65 @@ void setMotorDEC(unsigned char vitesse,bit direction)
 	//for(i=0;i<50000;i++);//voire figure 1
    switch(vitesse)
    {
+      case VITESSE_X01://x0,1
+         gVitesseDECH=VITESSE_X01_HIGH;
+         gVitesseDECL=VITESSE_X01_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X02://x0,2
+         gVitesseDECH=VITESSE_X02_HIGH;
+         gVitesseDECL=VITESSE_X02_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X03://x0,3
+         gVitesseDECH=VITESSE_X03_HIGH;
+         gVitesseDECL=VITESSE_X03_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X04://x0,4
+         gVitesseDECH=VITESSE_X04_HIGH;
+         gVitesseDECL=VITESSE_X04_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
       case VITESSE_X05://x0,5
-         gVitesseDEC=VITESSE_DEC_X05;
+         gVitesseDECH=VITESSE_X05_HIGH;
+         gVitesseDECL=VITESSE_X05_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X2://x2
-         gVitesseDEC=VITESSE_DEC_X2;
+         gVitesseDECH=VITESSE_X2_HIGH;
+         gVitesseDECL=VITESSE_X2_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X8://x8
-         gVitesseDEC=VITESSE_DEC_X8;
+         gVitesseDECH=VITESSE_X8_HIGH;
+         gVitesseDECL=VITESSE_X8_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X16://x16
-         gVitesseDEC=VITESSE_DEC_X16;
+         gVitesseDECH=VITESSE_X16_HIGH;
+         gVitesseDECL=VITESSE_X16_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_MAX://max
-         gVitesseDEC=VITESSE_DEC_MAX;
+         gVitesseDECH=VITESSE_MAX_HIGH;
+         gVitesseDECL=VITESSE_MAX_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
@@ -727,8 +813,8 @@ void Init_int()
 TimerInit ()
 -----------------------------------------------------------------------------
 Descriptif:
-Timer 0 : Mode 16bit - Prediv 48 - vitesse definit par gVitesseRAH-L
-Timer 1 : Mode 8bit - Prediv 48 - baudrate 57600
+Timer 0 : Mode 16bit - Prediv 12 - vitesse definit par gVitesseRAH-L
+Timer 1 : Mode 8bit - Prediv 12 - baudrate A RECALCULER
 Entree    : --
 Sortie    : --
 -*---------------------------------------------------------------------------*/
@@ -763,7 +849,7 @@ void TimerInit()
                  // ||||||||  (01: System clock divided by 4)
                  // ||||||||  (10: System clock divided by 48)
                  // ||||||||  (11: External clock divided by 8 
-   CKCON |= 0x02;// 00000010
+   CKCON |= 0x00;// 00000010
    TH0=gVitesseRAH;//Charge la valeur dans le registre MSB du timer 0
    TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
    TH1=TL1=BAUD_UART0;//Charge la valeur dans le registre LSB du timer 0

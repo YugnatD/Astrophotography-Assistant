@@ -154,6 +154,44 @@
 					}
 				});	
 			});
+
+			$('button#btnStellarium').click(function(){
+				var start=0;
+					if(document.getElementById("btnStellarium").innerHTML=="Arreter stellarium")
+					{
+						document.getElementById("btnStellarium").innerHTML="Demarrer stellarium";
+						document.getElementById("StartMesure").innerHTML="Arreter les mesures";
+						start=0;
+					}
+					else
+					{
+						document.getElementById("btnStellarium").innerHTML="Arreter stellarium";
+						document.getElementById("StartMesure").innerHTML="Demarrer les mesures";
+						start=1;
+					}
+				$.ajax
+				({
+					
+					url: "/Telescope/StartStellarium/",
+					type: "POST", //send it through get method
+					data: {"Reponse": start},
+					success: function(response) 
+					{
+						
+					}
+				});	
+				$.ajax
+				({
+					
+					url: "/Telescope/StartMesure/",
+					type: "POST", //send it through get method
+					data: {"Reponse": 0},
+					success: function(response) 
+					{
+						
+					}
+				});	
+			});
 			
 			$('button#CreateNewFile').click(function(){
 				document.getElementById("StartMesure").innerHTML="Arreter les mesures";
@@ -461,6 +499,7 @@
 		<canvas id="canvas" width="300" height="100"></canvas>
 		<button id="CreateNewFile" >Demarrer une nouvelle mesure</button>
 		<button id="StartMesure" >Demarrer les mesures</button>
+		<button id="btnStellarium" >Demarrer stellarium</button>
 		<button id="RA_Pos" >RA+</button>
 		<button id="RA_Stop" >Stop RA</button>
 		<button id="RA_Neg" >RA-</button>

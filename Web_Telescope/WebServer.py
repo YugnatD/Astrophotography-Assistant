@@ -163,14 +163,27 @@ def StartMesure():
       outfile.close()
    return str(1)
 
+@app.route("/Telescope/StartStellarium/", methods = ['POST'])
+def StartStellarium():
+   start = request.form.get("Reponse")
+   with open('Config.cfg') as f:
+      config = json.load(f)
+      f.close()
+   config["StateStellarium"]=start in ['true', '1']
+   config["State"]=False
+   with open('Config.cfg', 'w') as outfile:
+      json.dump(config, outfile)
+      outfile.close()
+   return str(1)
+
 @app.route("/Telescope/CreateNewFile/", methods = ['POST'])
 def CreateNewFile():
         #start = request.form.get("Reponse")
    with open('Config.cfg') as f:
       config = json.load(f)
       f.close()
-   config["CreateNewFile"]=True;
-   config["State"]=False;
+   config["CreateNewFile"]=True
+   config["State"]=False
    with open('Config.cfg', 'w') as outfile:
       json.dump(config, outfile)
       outfile.close()
