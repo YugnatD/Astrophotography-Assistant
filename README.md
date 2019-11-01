@@ -1,6 +1,6 @@
 # Astrophotography-Assistant
 
-![Alt text](Astrophotography-Assistant/Produit.png?raw=true "Astrophotography-Assistant")
+![Alt text](Produit.png?raw=true "Astrophotography-Assistant")
 
 The project has two utility :
 Make an automatic regulation of the temperature of the mirror of a newtonian telescope.
