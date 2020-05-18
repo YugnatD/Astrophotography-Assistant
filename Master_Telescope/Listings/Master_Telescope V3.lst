@@ -1,15 +1,15 @@
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 1   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 1   
 
 
-C51 COMPILER V9.56.0.0, COMPILATION OF MODULE MASTER_TELESCOPE_V3
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MASTER_TELESCOPE_V3
 OBJECT MODULE PLACED IN .\Objects\Master_Telescope V3.obj
 COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Master_Telescope V3.c OPTIMIZE(0,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(
-                    -.\Listings\Master_Telescope V3.lst) TABS(3) OBJECT(.\Objects\Master_Telescope V3.obj)
+                    -.\Listings\Master_Telescope V3.lst) TABS(2) OBJECT(.\Objects\Master_Telescope V3.obj)
 
 line level    source
 
    1          /*===========================================================================*=
-   2             Master_Telescope - Tanguy Dietrich
+   2            Master_Telescope - Tanguy Dietrich
    3            =============================================================================
    4             Descriptif: 
    5             Gestion de moteur d'une monture NEQ5.
@@ -62,7 +62,7 @@ line level    source
   52          void decodeUartRaspberryPi();
   53          void setMotorRA(unsigned char vitesse,bit direction);
   54          void setMotorDEC(unsigned char vitesse,bit direction);
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 2   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 2   
 
   55          void stopMotorDec();
   56          void configMCP23008(unsigned char input);
@@ -124,14 +124,14 @@ line level    source
  112          void main () 
  113          {
  114   1         unsigned char portExtender;
- 115   1         unsigned char memoAstreSuivi=0;
- 116   1         bit waitEndMove=0;
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 3   
+ 115   1        unsigned char memoAstreSuivi=0;
+ 116   1        bit waitEndMove=0;
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 3   
 
  117   1         PCA0MD &= ~0x40;     // WDTE = 0 (disable watchdog timer)
  118   1         ClockInit ();        // init. clock syst�me
  119   1         PortInit ();         // init. config des ports
- 120   1         SDA=1;
+ 120   1        SDA=1;
  121   1         reset_i2c();
  122   1         Init_int();
  123   1         Timer3_Init();                      // Configure Timer3 for use with SMBus
@@ -155,28 +155,28 @@ line level    source
  141   1         SDA=1;
  142   1         Delay_1ms (20);
  143   1         configMCP23008(0xFF);
- 144   1         portExtender=read_i2c_port();
+ 144   1        portExtender=read_i2c_port();
  145   1         gAstrSuivi=(portExtender>>4);
- 146   1         //memoAstreSuivi=gAstrSuivi;
+ 146   1        //memoAstreSuivi=gAstrSuivi;
  147   1         while (1)
  148   1         {
- 149   2            memoAstreSuivi=gAstrSuivi;
+ 149   2          memoAstreSuivi=gAstrSuivi;
  150   2            gVitesseDeplacement=(P2>>4)+VITESSE_X05;
  151   2            portExtender=read_i2c_port();
  152   2            gAstrSuivi=(portExtender>>4);
  153   2            gDirRa=(portExtender&0x04)>>2;
  154   2            gDirDec=(portExtender&0x08)>>3;
- 155   2            
- 156   2            if((memoAstreSuivi!=gAstrSuivi)||(waitEndMove==1))
- 157   2            {
- 158   3               waitEndMove=1;
- 159   3               if(gFlagMovingRA==0)
- 160   3               {
- 161   4                  setMotorRA(gAstrSuivi,gDirRa);
- 162   4                  waitEndMove=0;
- 163   4               }
- 164   3            }
- 165   2            
+ 155   2          
+ 156   2          if((memoAstreSuivi!=gAstrSuivi)||(waitEndMove==1))
+ 157   2          {
+ 158   3            waitEndMove=1;
+ 159   3            if(gFlagMovingRA==0)
+ 160   3            {
+ 161   4              setMotorRA(gAstrSuivi,gDirRa);
+ 162   4              waitEndMove=0;
+ 163   4            }
+ 164   3          }
+ 165   2          
  166   2            if((NFAULT_RA==0)&&(NSLEEP_RA==1))//probleme sur le DRV8825 de l'axe R.A
  167   2            {
  168   3               NSLEEP_RA=0;
@@ -190,7 +190,7 @@ line level    source
  176   3               NSLEEP_DEC=0;//Eteint
  177   3               Delay_1ms (10);
  178   3               NSLEEP_DEC=1;//Allume
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 4   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 4   
 
  179   3               Delay_1ms (10);
  180   3            }
@@ -198,16 +198,16 @@ line level    source
  182   2            if(gUart0FlagReceive)
  183   2            {
  184   3               gUart0FlagReceive=0;
- 185   3               while(gUart0NbrByteTx!=0);
+ 185   3            while(gUart0NbrByteTx!=0);
  186   3               decodeUartRaspberryPi();
  187   3            }
- 188   2            
+ 188   2          
  189   2            if(gUart1FlagReceive)
  190   2            {
- 191   3               while(gUart0NbrByteTx!=0);
- 192   3               gUart1FlagReceive=0;
- 193   3               strcpy(gUart0Tx,gUart1Rx);
- 194   3               TI0=1;
+ 191   3            while(gUart0NbrByteTx!=0);
+ 192   3            gUart1FlagReceive=0;
+ 193   3            strcpy(gUart0Tx,gUart1Rx);
+ 194   3            TI0=1;
  195   3            }
  196   2            
  197   2         } // End while (1)
@@ -228,22 +228,22 @@ line level    source
  212   1         if((!ST4_RA_POS)&&(!ST4_RA_NEG))
  213   1         {
  214   2            setMotorRA(gAstrSuivi,gDirRa);
- 215   2            gFlagMovingRA=0;
+ 215   2          gFlagMovingRA=0;
  216   2         }
  217   1         else if((ST4_RA_POS)&&(ST4_RA_NEG))
  218   1         {
  219   2            setMotorRA(gAstrSuivi,gDirRa);
- 220   2            gFlagMovingRA=0;
+ 220   2          gFlagMovingRA=0;
  221   2         }
  222   1         else if((ST4_RA_POS)&&(!ST4_RA_NEG))
  223   1         {
  224   2            setMotorRA(gVitesseDeplacement,!gDirRa);
- 225   2            gFlagMovingRA=1;
+ 225   2          gFlagMovingRA=1;
  226   2         }
  227   1         else if((!ST4_RA_POS)&&(ST4_RA_NEG))
  228   1         {
  229   2            setMotorRA(gVitesseDeplacement,gDirRa);
- 230   2            gFlagMovingRA=1;
+ 230   2          gFlagMovingRA=1;
  231   2         }
  232   1      }
  233          /*---------------------------------------------------------------------------*-
@@ -254,7 +254,7 @@ line level    source
  238          Entree    : --
  239          Sortie    : --
  240          -*---------------------------------------------------------------------------*/
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 5   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 5   
 
  241          void interruption_ST4_DEC() interrupt 2
  242          {
@@ -318,7 +318,7 @@ line level    source
  300          -*---------------------------------------------------------------------------*/
  301          void timer4() interrupt 19
  302          {
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 6   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 6   
 
  303   1         static unsigned int cpt=0;
  304   1         SFRPAGE   = CONFIG_PAGE;
@@ -361,7 +361,7 @@ line level    source
  341   2            if(gUart0Rx[gUart0NbrByteRx]=='#')
  342   2             {
  343   3                gUart0FlagReceive=1;
- 344   3                gUart0Rx[gUart0NbrByteRx+1]=0;
+ 344   3             gUart0Rx[gUart0NbrByteRx+1]=0;
  345   3                gUart0NbrByteRx=0;
  346   3             }
  347   2             else
@@ -382,7 +382,7 @@ line level    source
  362          {
  363   1         if(SCON1&0x02)//TI1
  364   1         {
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 7   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 7   
 
  365   2            SCON1=SCON1&~0x02;
  366   2            if(gUart1Tx[gUart1NbrByteTx]!=0)
@@ -403,7 +403,7 @@ line level    source
  381   2            if(gUart1Rx[gUart1NbrByteRx]=='\n')
  382   2             {
  383   3                gUart1FlagReceive=1;
- 384   3                gUart1Rx[gUart1NbrByteRx+1]=0;
+ 384   3             gUart1Rx[gUart1NbrByteRx+1]=0;
  385   3                gUart1NbrByteRx=0;
  386   3             }
  387   2             else
@@ -425,28 +425,28 @@ line level    source
  403          void reset_i2c()
  404          {
  405   1         unsigned char i=0;
- 406   1         if(!SDA)
- 407   1         {
- 408   2            //Desactive tout l'I2C
- 409   2            P0SKIP    = 0x03;//skip les pin SCL SDA
- 410   2            XBR0      = 0x01;//desactive l'I2C
- 411   2            //force le slave a sortir des donnee
- 412   2            while(!SDA)
- 413   2            {
- 414   3               // Provide clock pulses to allow the slave to advance out
- 415   3               // of its current state. This will allow it to release SDA.
- 416   3               SCL = 0;                         // Drive the clock low
- 417   3               for(i = 0; i < 100; i++);        // Hold the clock low
- 418   3               SCL = 1;                         // Release the clock
- 419   3               for(i = 0; i < 100; i++);        // Hold the clock low
- 420   3            }
- 421   2            P0SKIP    = 0x00;//Enleve les skip de pin SDA et SCL
- 422   2            XBR0      = 0x05;//reactive l'i2c
- 423   2         }
+ 406   1        if(!SDA)
+ 407   1        {
+ 408   2          //Desactive tout l'I2C
+ 409   2          P0SKIP    = 0x03;//skip les pin SCL SDA
+ 410   2          XBR0      = 0x01;//desactive l'I2C
+ 411   2          //force le slave a sortir des donnee
+ 412   2          while(!SDA)
+ 413   2          {
+ 414   3            // Provide clock pulses to allow the slave to advance out
+ 415   3            // of its current state. This will allow it to release SDA.
+ 416   3            SCL = 0;                         // Drive the clock low
+ 417   3            for(i = 0; i < 100; i++);        // Hold the clock low
+ 418   3            SCL = 1;                         // Release the clock
+ 419   3            for(i = 0; i < 100; i++);        // Hold the clock low
+ 420   3          }
+ 421   2          P0SKIP   = 0x00;//Enleve les skip de pin SDA et SCL
+ 422   2          XBR0      = 0x05;//reactive l'i2c
+ 423   2        }
  424   1      }
  425          
  426          /*---------------------------------------------------------------------------*-
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 8   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 8   
 
  427          configMCP23008()
  428          -----------------------------------------------------------------------------
@@ -495,12 +495,12 @@ line level    source
  471          -*---------------------------------------------------------------------------*/
  472          void setMotorRA(unsigned char vitesse,bit direction)
  473          {
- 474   1         unsigned int i=0;
- 475   1         TR0=0;
+ 474   1        unsigned int i=0;
+ 475   1        TR0=0;
  476   1         STEP_RA=0;
- 477   1         //for(i=0;i<500;i++);//voire figure 1
+ 477   1        //for(i=0;i<500;i++);//voire figure 1
  478   1         DIR_RA=direction;
- 479   1         //for(i=0;i<;i++);//voire figure 1
+ 479   1        //for(i=0;i<;i++);//voire figure 1
  480   1         switch(vitesse)
  481   1         {
  482   2            case VITESSE_RA_SIDERAL://suivi sideral
@@ -510,7 +510,7 @@ line level    source
  486   2            case VITESSE_RA_LUNE://suivi Lune
  487   2               gVitesseRAH=VITESSE_RA_LUNE_HIGH;
  488   2               gVitesseRAL=VITESSE_RA_LUNE_LOW;
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 9   
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 9   
 
  489   2            break;
  490   2            case VITESSE_RA_SOLEIL://suivi Soleil-Planete generale
@@ -563,7 +563,7 @@ line level    source
  537   2               gVitesseRAL=VITESSE_RA_SIDERAL_LOW;      
  538   2            break;
  539   2         }
- 540   1         TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
+ 540   1        TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
  541   1         TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
  542   1         TR0=1;
  543   1      }
@@ -574,22 +574,22 @@ line level    source
  548          Descriptif: Applique une vitesse predefinit au moteur et une direction
  549          Entree    :
  550                      - unsigned char vitesse (6 ... 10)
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 10  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 10  
 
  551                      - bit direction         (0 ... 1)
  552          Sortie    : --
  553          -*---------------------------------------------------------------------------*/
  554          void setMotorDEC(unsigned char vitesse,bit direction)
  555          {
- 556   1         unsigned int i=0;
- 557   1         SFRPAGE   = CONFIG_PAGE;
+ 556   1        unsigned int i=0;
+ 557   1        SFRPAGE   = CONFIG_PAGE;
  558   1         TMR4CN&=~0x04;
  559   1         SFRPAGE   = LEGACY_PAGE;
- 560   1         //for(i=0;i<50000;i++);//voire figure 1
+ 560   1        //for(i=0;i<50000;i++);//voire figure 1
  561   1         NSLEEP_DEC=1;//Attention il faut 1.7ms au chip pour se rallumer
  562   1         STEP_DEC=0;
  563   1         DIR_DEC=direction;
- 564   1         //for(i=0;i<50000;i++);//voire figure 1
+ 564   1        //for(i=0;i<50000;i++);//voire figure 1
  565   1         switch(vitesse)
  566   1         {
  567   2            case VITESSE_X05://x0,5
@@ -638,7 +638,7 @@ line level    source
  610          void stopMotorDec()
  611          {
  612   1         SFRPAGE   = CONFIG_PAGE;
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 11  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 11  
 
  613   1         TMR4CN&=~0x04;
  614   1         SFRPAGE   = LEGACY_PAGE;
@@ -684,12 +684,12 @@ line level    source
  654   3               stopMotorDec();
  655   3            }
  656   2         }
- 657   1         else//Ne reconnait pas la commande, fais suivre au slave
- 658   1         {
- 659   2            //gUart1Tx[0]
- 660   2            strcpy(gUart1Tx,gUart0Rx);
- 661   2            SCON1|=0x02;
- 662   2         }
+ 657   1        else//Ne reconnait pas la commande, fais suivre au slave
+ 658   1        {
+ 659   2          //gUart1Tx[0]
+ 660   2          strcpy(gUart1Tx,gUart0Rx);
+ 661   2          SCON1|=0x02;
+ 662   2        }
  663   1      }
  664          
  665          /*---------------------------------------------------------------------------*-
@@ -702,22 +702,22 @@ line level    source
  672          -*---------------------------------------------------------------------------*/
  673          void UART_Init()
  674          {
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 12  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 12  
 
  675   1          SCON0     = 0x10;
  676   1          //SBRLL1    = 0x3C;
  677   1          //SBRLH1    = 0xF6;
  678   1          //SCON1     = 0x10;
  679   1          //SBCON1    = 0x43;
- 680   1         
- 681   1         //57600 Uart1
- 682   1          SBRLL1    = 0x5F;
+ 680   1        
+ 681   1        //57600 Uart1
+ 682   1         SBRLL1    = 0x5F;
  683   1          SBRLH1    = 0xFE;
  684   1          SCON1     = 0x10;
  685   1          SBCON1    = 0x43;
- 686   1         
- 687   1         //115200 Uart1
- 688   1      // SBRLL1    = 0x30;
+ 686   1        
+ 687   1        //115200 Uart1
+ 688   1      //  SBRLL1    = 0x30;
  689   1      //    SBRLH1    = 0xFF;
  690   1      //    SCON1     = 0x10;
  691   1      //    SBCON1    = 0x43;
@@ -766,7 +766,7 @@ line level    source
  734          -*---------------------------------------------------------------------------*/
  735          void TimerInit()
  736          {
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 13  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 13  
 
  737   1         //Timer 0 et 1
  738   1         TR0 = 0;//Stop le timer 0
@@ -782,10 +782,10 @@ line level    source
  748   1                      // ||||||++- choix du mode du timer 0
  749   1                      // ||||||||  (00 : Mode 0, 13-bit Counter/Timer)
  750   1                      // ||||||||  (01 : Mode 1, 16-bit Counter/Timer)
- 751   1                      // ||||||||  (10 : Mode 2, 8-bit Counter/Timer with Auto-Reload)
+ 751   1                      // ||||||||  (10 : Mode 2, 8-bit Counter/Timer with reload
  752   1                      // ||||||||  (11 : Mode 3, Two 8-bit Counter/Timers)  
  753   1         TMOD |= 0x21;// 00000001
- 754   1         CKCON &= ~0x07;//clear les bit de selection pour les timer 0 et 1 et le prescalaire
+ 754   1         CKCON &= ~0x07;//clear les bit de selection pour les timer 0 et 1 
  755   1                       // +-------- Timer 3 High Byte Clock Select.
  756   1                       // |+------- Timer 3 Low Byte Clock Select.
  757   1                       // ||+------ Timer 2 High Byte Clock Select
@@ -796,7 +796,7 @@ line level    source
  762   1                       // ||||||||  (00: System clock divided by 12)
  763   1                       // ||||||||  (01: System clock divided by 4)
  764   1                       // ||||||||  (10: System clock divided by 48)
- 765   1                       // ||||||||  (11: External clock divided by 8 (synchronized with the system clock))  
+ 765   1                       // ||||||||  (11: External clock divided by 8 
  766   1         CKCON |= 0x02;// 00000010
  767   1         TH0=gVitesseRAH;//Charge la valeur dans le registre MSB du timer 0
  768   1         TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
@@ -830,7 +830,7 @@ line level    source
  796   1                           // | (1 : oscillateur LF : enable)
  797   1                           // | (0 : oscillateur LF: desable)
  798   1                           // |+-------- en lecture seule 1 : signal que oscillateur 
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 14  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 14  
 
  799   1                           // ||         interne fonctionne � sa valeur de prog.
  800   1                           // ||++++---- r�glage fin de la fr�quence de l'osc. LF
@@ -894,7 +894,7 @@ line level    source
  858          //
  859          void SMBus_Init (void)
  860          {
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 15  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 15  
 
  861   1         SMB0CF = 0x5E;                      // Use Timer2 overflows as SMBus clock
  862   1                                             // source;
@@ -958,7 +958,7 @@ line level    source
  920   1         TMR3CN |= 0x04;                     // Start Timer3
  921   1      }
  922          
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 16  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 16  
 
  923          //-----------------------------------------------------------------------------
  924          // SMBus Interrupt Service Routine (ISR)
@@ -1022,7 +1022,7 @@ line level    source
  982   3                  {
  983   4                     STO0 = 1;                // Send STOP condition, followed
  984   4                     STA0 = 1;                // By a START
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 17  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 17  
 
  985   4                     NUM_ERRORS++;           // Indicate error
  986   4                  }
@@ -1086,7 +1086,7 @@ line level    source
 1044          //-----------------------------------------------------------------------------
 1045          //
 1046          // A Timer3 interrupt indicates an SMBus SCL low timeout.
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 18  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 18  
 
 1047          // The SMBus is disabled and re-enabled here
 1048          //
@@ -1150,7 +1150,7 @@ line level    source
 1106   1      
 1107   1         while (SMB_BUSY);                   // Wait for transfer to complete
 1108   1      }
-C51 COMPILER V9.56.0.0   MASTER_TELESCOPE_V3                                               06/07/2019 09:06:16 PAGE 19  
+C51 COMPILER V9.60.0.0   MASTER_TELESCOPE_V3                                               02/12/2020 22:37:48 PAGE 19  
 
 1109          
 1110          
@@ -1204,7 +1204,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2041    ----
+   CODE SIZE        =   2071    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     40    ----
    PDATA SIZE       =   ----    ----
