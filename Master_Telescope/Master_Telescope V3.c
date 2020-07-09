@@ -1,7 +1,7 @@
 /*===========================================================================*=
 	Master_Telescope - Tanguy Dietrich
   =============================================================================
-   Descriptif:
+   Descriptif: 
    Gestion de moteur d'une monture NEQ5.
    Le moteur R.A a une vitesse constante correspondant a la vitesse sideral.
    Le moteur DEC est activer lorsque la pin p2.2 ou P2.3(ST4) sont a 0
@@ -16,7 +16,7 @@
 
 #define CONFIG_PAGE 0x0F
 #define LEGACY_PAGE 0x00
-#define BAUD_UART0 247 //247=57600
+#define BAUD_UART0 221 //247=57600 
 
 //PCB
 sbit STEP_RA = P1^3;
@@ -87,9 +87,11 @@ unsigned long NUM_ERRORS;              // Counter for the number of errors.
 
 
 //Gestion Moteur
-unsigned char gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-unsigned char gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
-unsigned int gVitesseDEC=VITESSE_DEC_MAX;
+unsigned char gVitesseRAH=VITESSE_SIDERAL_HIGH;
+unsigned char gVitesseRAL=VITESSE_SIDERAL_LOW;
+unsigned char gVitesseDECH=VITESSE_SIDERAL_HIGH;
+unsigned char gVitesseDECL=VITESSE_SIDERAL_HIGH;
+//unsigned int gVitesseDEC=VITESSE_DEC_MAX;
 unsigned char gVitesseDeplacement=VITESSE_MAX;
 
 //Uart
@@ -109,7 +111,7 @@ bit gDirDec=0;
 unsigned char gAstrSuivi=0;
 bit gFlagMovingRA=0;
 
-void main ()
+void main () 
 {
    unsigned char portExtender;
 	unsigned char memoAstreSuivi=0;
@@ -137,7 +139,7 @@ void main ()
    NSLEEP_DEC=0;
    DIR_RA=0;
    DIR_DEC=0;
-
+   
    SDA=1;
    Delay_1ms (20);
    configMCP23008(0xFF);
@@ -147,12 +149,12 @@ void main ()
    while (1)
    {
 		memoAstreSuivi=gAstrSuivi;
-      gVitesseDeplacement=(P2>>4)+VITESSE_X05;
+      gVitesseDeplacement=(P2>>4)+VITESSE_X01;
       portExtender=read_i2c_port();
       gAstrSuivi=(portExtender>>4);
       gDirRa=(portExtender&0x04)>>2;
       gDirDec=(portExtender&0x08)>>3;
-
+		
 		if((memoAstreSuivi!=gAstrSuivi)||(waitEndMove==1))
 		{
 			waitEndMove=1;
@@ -162,7 +164,7 @@ void main ()
 				waitEndMove=0;
 			}
 		}
-
+		
       if((NFAULT_RA==0)&&(NSLEEP_RA==1))//probleme sur le DRV8825 de l'axe R.A
       {
          NSLEEP_RA=0;
@@ -170,7 +172,7 @@ void main ()
          NSLEEP_RA=1;
          Delay_1ms (10);//1.7ms necessaire au rallumage
       }
-
+      
       if((NFAULT_DEC==0)&&(NSLEEP_DEC==1))//probleme sur le DRV8825 de l'axe DEC
       {
          NSLEEP_DEC=0;//Eteint
@@ -178,14 +180,14 @@ void main ()
          NSLEEP_DEC=1;//Allume
          Delay_1ms (10);
       }
-
+      
       if(gUart0FlagReceive)
       {
          gUart0FlagReceive=0;
 			while(gUart0NbrByteTx!=0);
          decodeUartRaspberryPi();
       }
-
+		
       if(gUart1FlagReceive)
       {
 			while(gUart0NbrByteTx!=0);
@@ -193,7 +195,7 @@ void main ()
 			strcpy(gUart0Tx,gUart1Rx);
 			TI0=1;
       }
-
+      
    } // End while (1)
 } // main =====================================================================
 
@@ -287,7 +289,7 @@ void timer0() interrupt 1
 //-*---------------------------------------------------------------------------*/
 //void timer1() interrupt 3
 //{
-//
+//   
 //}
 
 /*---------------------------------------------------------------------------*-
@@ -300,16 +302,15 @@ Sortie    : --
 -*---------------------------------------------------------------------------*/
 void timer4() interrupt 19
 {
-   static unsigned int cpt=0;
+   //static unsigned int cpt=0;
    SFRPAGE   = CONFIG_PAGE;
    TMR4CN &=~0xC0;//Clear pending flag
+   TMR4CN &=~0x04;//arrette le timer
+   TMR4RLH=gVitesseDECH;
+   TMR4RLL=gVitesseDECL;
+   TMR4CN|=0x04;//relance le timer
    SFRPAGE   = LEGACY_PAGE;
-   cpt++;
-   if(cpt>=gVitesseDEC)
-   {
-      STEP_DEC=!STEP_DEC;
-      cpt=0;
-   }
+   STEP_DEC=!STEP_DEC;
 }
 /*---------------------------------------------------------------------------*-
 uart0()
@@ -333,7 +334,7 @@ void uart0() interrupt 4
          gUart0NbrByteTx=0;
       }
    }
-
+   
    if(RI0)
    {
       RI0=0;
@@ -373,7 +374,7 @@ void uart1() interrupt 16
          gUart1NbrByteTx=0;
       }
    }
-
+   
    if(SCON1&0x01)//RI1
    {
       SCON1=SCON1&~0x01;
@@ -426,7 +427,7 @@ void reset_i2c()
 /*---------------------------------------------------------------------------*-
 configMCP23008()
 -----------------------------------------------------------------------------
-Descriptif:
+Descriptif: 
 Entree    : unsigned char input (0 ... 255) - choix de pins a mettre en sortie
 Sortie    : --
 -*---------------------------------------------------------------------------*/
@@ -464,7 +465,7 @@ unsigned char read_i2c_port()
 setMotorRA()
 -----------------------------------------------------------------------------
 Descriptif: Applique une vitesse predefinit au moteur et une direction
-Entree    :
+Entree    : 
             - unsigned char vitesse (0 ... 10)
             - bit direction         (0 ... 1)
 Sortie    : --
@@ -479,62 +480,118 @@ void setMotorRA(unsigned char vitesse,bit direction)
 	//for(i=0;i<;i++);//voire figure 1
    switch(vitesse)
    {
-      case VITESSE_RA_SIDERAL://suivi sideral
-         gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-         gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
+      case VITESSE_SIDERAL://suivi sideral
+         gVitesseRAH=VITESSE_SIDERAL_HIGH;
+         gVitesseRAL=VITESSE_SIDERAL_LOW;
       break;
-      case VITESSE_RA_LUNE://suivi Lune
-         gVitesseRAH=VITESSE_RA_LUNE_HIGH;
-         gVitesseRAL=VITESSE_RA_LUNE_LOW;
+      case VITESSE_LUNE://suivi Lune
+         gVitesseRAH=VITESSE_LUNE_HIGH;
+         gVitesseRAL=VITESSE_LUNE_LOW;
       break;
-      case VITESSE_RA_SOLEIL://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_SOLEIL_HIGH;//
-         gVitesseRAL=VITESSE_RA_SOLEIL_LOW;
+      case VITESSE_SOLEIL://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_SOLEIL_HIGH;//
+         gVitesseRAL=VITESSE_SOLEIL_LOW;
       break;
-      case VITESSE_RA_SATURNE://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_SATURNE_HIGH;//
-         gVitesseRAL=VITESSE_RA_SATURNE_LOW;
+      case VITESSE_SATURNE://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_SATURNE_HIGH;//
+         gVitesseRAL=VITESSE_SATURNE_LOW;
       break;
-      case VITESSE_RA_JUPITER://suivi Soleil-Planete generale
-         gVitesseRAH=VITESSE_RA_JUPITER_HIGH;//
-         gVitesseRAL=VITESSE_RA_JUPITER_LOW;
+      case VITESSE_JUPITER://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_JUPITER_HIGH;//
+         gVitesseRAL=VITESSE_JUPITER_LOW;
       break;
-      case VITESSE_RA_ISS://suivi ISS
-         gVitesseRAH=VITESSE_RA_ISS_HIGH;
-         gVitesseRAL=VITESSE_RA_ISS_LOW;
+			case VITESSE_COMETE://suivi Soleil-Planete generale
+         gVitesseRAH=VITESSE_COMETE_HIGH;//
+         gVitesseRAL=VITESSE_COMETE_LOW;
+      break;
+      case VITESSE_ISS://suivi ISS
+         gVitesseRAH=VITESSE_ISS_HIGH;
+         gVitesseRAL=VITESSE_ISS_LOW;
+      break;
+      case VITESSE_X01://x0,1
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_1_HIGH;
+            gVitesseRAL=VITESSE_X1_1_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X01_HIGH;
+            gVitesseRAL=VITESSE_X01_LOW;
+         }
+      break;
+      case VITESSE_X02://x0,2
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_2_HIGH;
+            gVitesseRAL=VITESSE_X1_2_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X02_HIGH;
+            gVitesseRAL=VITESSE_X02_LOW;
+         }
+      break;
+      case VITESSE_X03://x0,3
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_3_HIGH;
+            gVitesseRAL=VITESSE_X1_3_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X03_HIGH;
+            gVitesseRAL=VITESSE_X03_LOW;
+         }
+      break;
+      case VITESSE_X04://x0,4
+         DIR_RA=0;
+         if(direction==0)
+         {
+            gVitesseRAH=VITESSE_X1_4_HIGH;
+            gVitesseRAL=VITESSE_X1_4_LOW;
+         }
+         else
+         {
+            gVitesseRAH=VITESSE_X04_HIGH;
+            gVitesseRAL=VITESSE_X04_LOW;
+         }
       break;
       case VITESSE_X05://x0,5
          DIR_RA=0;
          if(direction==0)
          {
-            gVitesseRAH=VITESSE_RA_X1_5_HIGH;
-            gVitesseRAL=VITESSE_RA_X1_5_HIGH;
+            gVitesseRAH=VITESSE_X1_5_HIGH;
+            gVitesseRAL=VITESSE_X1_5_LOW;
          }
          else
          {
-            gVitesseRAH=VITESSE_RA_X05_HIGH;
-            gVitesseRAL=VITESSE_RA_X05_LOW;
+            gVitesseRAH=VITESSE_X05_HIGH;
+            gVitesseRAL=VITESSE_X05_LOW;
          }
       break;
       case VITESSE_X2://x2
-         gVitesseRAH=VITESSE_RA_X2_HIGH;
-         gVitesseRAL=VITESSE_RA_X2_LOW;
+         gVitesseRAH=VITESSE_X2_HIGH;
+         gVitesseRAL=VITESSE_X2_LOW;
       break;
       case VITESSE_X8://x8
-         gVitesseRAH=VITESSE_RA_X8_HIGH;
-         gVitesseRAL=VITESSE_RA_X8_LOW;
+         gVitesseRAH=VITESSE_X8_HIGH;
+         gVitesseRAL=VITESSE_X8_LOW;
       break;
       case VITESSE_X16://x16
-         gVitesseRAH=VITESSE_RA_X16_HIGH;
-         gVitesseRAL=VITESSE_RA_X16_LOW;
+         gVitesseRAH=VITESSE_X16_HIGH;
+         gVitesseRAL=VITESSE_X16_LOW;
       break;
       case VITESSE_MAX://max
-         gVitesseRAH=VITESSE_RA_MAX_HIGH;
-         gVitesseRAL=VITESSE_RA_MAX_LOW;
+         gVitesseRAH=VITESSE_MAX_HIGH;
+         gVitesseRAL=VITESSE_MAX_LOW;
       break;
       default://suivi sideral
-         gVitesseRAH=VITESSE_RA_SIDERAL_HIGH;
-         gVitesseRAL=VITESSE_RA_SIDERAL_LOW;
+         gVitesseRAH=VITESSE_SIDERAL_HIGH;
+         gVitesseRAL=VITESSE_SIDERAL_LOW;      
       break;
    }
 	TH0=gVitesseRAH ;//Charge la valeur dans le registre MSB du timer 0
@@ -564,38 +621,71 @@ void setMotorDEC(unsigned char vitesse,bit direction)
 	//for(i=0;i<50000;i++);//voire figure 1
    switch(vitesse)
    {
+      case VITESSE_X01://x0,1
+         gVitesseDECH=VITESSE_X01_HIGH;
+         gVitesseDECL=VITESSE_X01_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X02://x0,2
+         gVitesseDECH=VITESSE_X02_HIGH;
+         gVitesseDECL=VITESSE_X02_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X03://x0,3
+         gVitesseDECH=VITESSE_X03_HIGH;
+         gVitesseDECL=VITESSE_X03_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
+      case VITESSE_X04://x0,4
+         gVitesseDECH=VITESSE_X04_HIGH;
+         gVitesseDECL=VITESSE_X04_LOW;
+         SFRPAGE   = CONFIG_PAGE;
+         TMR4CN|=0x04;
+         SFRPAGE   = LEGACY_PAGE;
+      break;
       case VITESSE_X05://x0,5
-         gVitesseDEC=VITESSE_DEC_X05;
+         gVitesseDECH=VITESSE_X05_HIGH;
+         gVitesseDECL=VITESSE_X05_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X2://x2
-         gVitesseDEC=VITESSE_DEC_X2;
+         gVitesseDECH=VITESSE_X2_HIGH;
+         gVitesseDECL=VITESSE_X2_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X8://x8
-         gVitesseDEC=VITESSE_DEC_X8;
+         gVitesseDECH=VITESSE_X8_HIGH;
+         gVitesseDECL=VITESSE_X8_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_X16://x16
-         gVitesseDEC=VITESSE_DEC_X16;
+         gVitesseDECH=VITESSE_X16_HIGH;
+         gVitesseDECL=VITESSE_X16_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       case VITESSE_MAX://max
-         gVitesseDEC=VITESSE_DEC_MAX;
+         gVitesseDECH=VITESSE_MAX_HIGH;
+         gVitesseDECL=VITESSE_MAX_LOW;
          SFRPAGE   = CONFIG_PAGE;
          TMR4CN|=0x04;
          SFRPAGE   = LEGACY_PAGE;
       break;
       default://suivi sideral
-        stopMotorDec();
+        stopMotorDec(); 
       break;
    }
 }
@@ -677,13 +767,13 @@ void UART_Init()
     //SBRLH1    = 0xF6;
     //SCON1     = 0x10;
     //SBCON1    = 0x43;
-
+	
 	//57600 Uart1
 	 SBRLL1    = 0x5F;
     SBRLH1    = 0xFE;
     SCON1     = 0x10;
     SBCON1    = 0x43;
-
+	
 	//115200 Uart1
 //	SBRLL1    = 0x30;
 //    SBRLH1    = 0xFF;
@@ -714,7 +804,7 @@ void Init_int()
                          // ||||||||  (000: Select P0.0)
                          // ||||||||  ...
                          // ||||||||  ...
-                         // ||||||||  (111: Select P0.7)
+                         // ||||||||  (111: Select P0.7)  
    IT01CF= IT01CF | 0x76;// 01110110
 
    IE0=0; IE0=0; IE0=0;//clear du flag d'interruption 0 (3* pour eviter les bug)
@@ -727,8 +817,8 @@ void Init_int()
 TimerInit ()
 -----------------------------------------------------------------------------
 Descriptif:
-Timer 0 : Mode 16bit - Prediv 48 - vitesse definit par gVitesseRAH-L
-Timer 1 : Mode 8bit - Prediv 48 - baudrate 57600
+Timer 0 : Mode 16bit - Prediv 12 - vitesse definit par gVitesseRAH-L
+Timer 1 : Mode 8bit - Prediv 12 - baudrate A RECALCULER
 Entree    : --
 Sortie    : --
 -*---------------------------------------------------------------------------*/
@@ -749,9 +839,9 @@ void TimerInit()
                 // ||||||||  (00 : Mode 0, 13-bit Counter/Timer)
                 // ||||||||  (01 : Mode 1, 16-bit Counter/Timer)
                 // ||||||||  (10 : Mode 2, 8-bit Counter/Timer with reload
-                // ||||||||  (11 : Mode 3, Two 8-bit Counter/Timers)
+                // ||||||||  (11 : Mode 3, Two 8-bit Counter/Timers)  
    TMOD |= 0x21;// 00000001
-   CKCON &= ~0x07;//clear les bit de selection pour les timer 0 et 1
+   CKCON &= ~0x07;//clear les bit de selection pour les timer 0 et 1 
                  // +-------- Timer 3 High Byte Clock Select.
                  // |+------- Timer 3 Low Byte Clock Select.
                  // ||+------ Timer 2 High Byte Clock Select
@@ -762,8 +852,8 @@ void TimerInit()
                  // ||||||||  (00: System clock divided by 12)
                  // ||||||||  (01: System clock divided by 4)
                  // ||||||||  (10: System clock divided by 48)
-                 // ||||||||  (11: External clock divided by 8
-   CKCON |= 0x02;// 00000010
+                 // ||||||||  (11: External clock divided by 8 
+   CKCON |= 0x00;// 00000010
    TH0=gVitesseRAH;//Charge la valeur dans le registre MSB du timer 0
    TL0=gVitesseRAL;//Charge la valeur dans le registre LSB du timer 0
    TH1=TL1=BAUD_UART0;//Charge la valeur dans le registre LSB du timer 0
@@ -771,8 +861,8 @@ void TimerInit()
    TF1 = 0;
    ET0 = 1;//Autorise l'interruption du timer 0
    //ET1 = 1;
-
-   //Init Timer 4
+   
+   //Init Timer 4 
    SFRPAGE   = CONFIG_PAGE;
    TMR4CN = 0x00;//Mode 16 bit auto reload
    TMR4RLH=0xF7;
@@ -783,19 +873,19 @@ void TimerInit()
 /*---------------------------------------------------------------------------*-
    ClockInit ()
   -----------------------------------------------------------------------------
-   Descriptif: Initialisation du mode de fonctionnement du clock syst�me
+   Descriptif: Initialisation du mode de fonctionnement du clock syst�me 
          choix : SYSCLK : oscillateur HF interne � 48 MHz
 
    Entr�e    : --
    Sortie    : --
 -*---------------------------------------------------------------------------*/
 void ClockInit()
-{
-
+{  
+   
                      // +--------- clock interne LF
                      // | (1 : oscillateur LF : enable)
                      // | (0 : oscillateur LF: desable)
-                     // |+-------- en lecture seule 1 : signal que oscillateur
+                     // |+-------- en lecture seule 1 : signal que oscillateur 
                      // ||         interne fonctionne � sa valeur de prog.
                      // ||++++---- r�glage fin de la fr�quence de l'osc. LF
                      // ||||||++-- choix du diviseur :
@@ -803,29 +893,29 @@ void ClockInit()
                      // ||||||||       (01 : Osc LF /4 -> f = 20 KHz)
                      // ||||||||       (10 : Osc LF /2 -> f = 40 KHz)
                      // ||||||||       (11 : Osc LF /1 -> f = 80 KHz)
-   OSCLCN |= 0x00;   // 00000000
+   OSCLCN |= 0x00;   // 00000000 
 
                      // +--------- non utilis�
-                     // |+++------ S�lection du clock USB
+                     // |+++------ S�lection du clock USB 
                      // ||||           (010 : Oscil ext. : limiter la conso.)
                      // ||||+----- clock out select
                      // |||||          (0 : sortie sysclk non synchronis�e)
                      // |||||          (1 : sortie sysclk synchronis�e)
                      // |||||+++-- choix du clock syst�me
                      // ||||||||       (000 : Oscil interne 48/4  = 1.5, 3, 6 ou
-                     // ||||||||              12 MHz selon le choix du diviseur
+                     // ||||||||              12 MHz selon le choix du diviseur 
                      // ||||||||              dans OSCICN
                      // ||||||||       (001 : Oscil externe  = x  MHz)
                      // ||||||||       (010 : Oscil interne 48/2 = 24 MHz)
-                     // ||||||||       (011 : Oscil interne 48/1 = 48 MHz)
-                     // ||||||||       (100 : Oscil interne LF = 80 KHz max)
-                     // ||||||||       (101 � 111 : r�serv�s)
-   CLKSEL = 0x03;    // 00000011
+                     // ||||||||       (011 : Oscil interne 48/1 = 48 MHz)    
+                     // ||||||||       (100 : Oscil interne LF = 80 KHz max)   
+                     // ||||||||       (101 � 111 : r�serv�s)   
+   CLKSEL = 0x03;    // 00000011  
 
                      // +--------- clock interne HF
                      // |              (1 : oscillateur LF : enable)
                      // |              (0 : oscillateur LF: desable)
-                     // |+-------- en lecture seule 1 : signal que oscillateur
+                     // |+-------- en lecture seule 1 : signal que oscillateur 
                      // ||              interne fonctionne � sa valeur de prog.
                      // ||+------- 1 : suspend l'oscillateur interne
                      // |||+++---- non utilis�s
@@ -834,8 +924,8 @@ void ClockInit()
                      // ||||||||       (01 : 12/4 -> f =  3   MHz)
                      // ||||||||       (10 : 12/2 -> f =  6   MHz)
                      // ||||||||       (11 : 12/1 -> f = 12   MHz)
-   OSCICN = 0xC3;    // 11000011
-
+   OSCICN = 0xC3;    // 11000011 
+   
    FLSCL = 0x90;     // A utiliser si le clock system est � 48 MHz
 
 } // ClockInit ----------------------------------------------------------------
@@ -1115,7 +1205,7 @@ void SMB_Read (void)
    Entr�e    : --
    Sortie    : --
 -*---------------------------------------------------------------------------*/
-void PortInit ()
+void PortInit () 
 {
    // P0.0  -  SDA (SMBus0), Open-Drain, Digital
     // P0.1  -  SCL (SMBus0), Push-Pull,  Digital
