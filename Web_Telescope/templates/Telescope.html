@@ -428,6 +428,15 @@
 						else //Aucune mesure en cours
 						{
 							document.getElementById("StartMesure").innerHTML = "Demarrer les mesures";
+							if(obj.StateStellarium==true)
+							{
+								document.getElementById("btnStellarium").innerHTML="Arreter stellarium";
+							}
+							else
+							{
+								document.getElementById("btnStellarium").innerHTML="Demarrer stellarium";
+							}
+							
 						}
 					}
 				}
@@ -510,6 +519,7 @@
 		une mesure toutes les : 
 		<input type="number" name="nMesure" id="nMesure" min="1" max="300" width="50"><br>
 		<a href="/Mesure">Telecharger toutes les mesure</a><br>
+		<a href="/RAW">Afficher le dossier RAW</a><br>
 		<h2>Pwm 0 :</h2>
 		<input type="range" min="0" max="255" value = "255" class="slider" id="sliderPwm0"></input>
 		<span id="valuePwm0">Pwm0 : </span>

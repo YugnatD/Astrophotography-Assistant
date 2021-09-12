@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#https://github.com/Svenito/Pyscope/blob/master/tcp_test.py
 import struct
 import time
 import socket, select
@@ -9,13 +8,13 @@ import time
 from math import *
 
 M_PI =  3.1415926535897932385
-MOVE_SPEED = 48
+MOVE_SPEED = 59
 flagPosition=1
 UNITE_DEPLACEMENT = 49843#correspond a 15.04"arc
 DEPLACEMENT_SECONDS_DEC = UNITE_DEPLACEMENT * MOVE_SPEED
 DEPLACEMENT_SECONDS_RA_POS = UNITE_DEPLACEMENT * (MOVE_SPEED+1)#le ciel continue de bouger en meme temps
 DEPLACEMENT_SECONDS_RA_NEG = UNITE_DEPLACEMENT * (MOVE_SPEED-1)
-serial = serial.Serial("/dev/ttyS0",57600,timeout=2)#
+serial = serial.Serial("/dev/ttyS0",57600,timeout=2)#Tanguy
 # List of socket objects that are currently open
 open_sockets = []
 
@@ -128,9 +127,10 @@ while True:
                 deplacement_dec = current_position[1]-data[4]
                 #temps de deplacement en millisec
                 temps_dec=float(abs(deplacement_dec*1000)/DEPLACEMENT_SECONDS_DEC)
-
-                print (temps_ra)
-                print (temps_dec)
+                print "Pos RA :"+ str(data[3])
+                print "Pos DEC :"+ str(data[4])
+                print ("Temps RA :"+str(temps_ra))
+                print ("Temps DEC :"+str(temps_dec))
                 end_move_ra=0
                 end_move_dec=0
                 moving_RA=current_position[0]
@@ -163,6 +163,24 @@ while True:
                     
                     if (end_move_ra==1) & (end_move_dec==1):
                         break
+                    
+##                    if ((time_elapsed%1000)==0):#a verifier que ca ne prend pas trop de temps
+##                        if deplacement_dec > 0:
+##                            moving_DEC=moving_DEC-UNITE_DEPLACEMENT
+##                        elif deplacement_dec < 0:
+##                            moving_DEC=moving_DEC+UNITE_DEPLACEMENT
+##                        else:
+##                            pass
+##                            
+##                        if deplacement_ra > 0:
+##                            moving_RA=moving_RA-UNITE_DEPLACEMENT
+##                        elif deplacement_ra < 0:
+##                            moving_RA=moving_RA+UNITE_DEPLACEMENT
+##                        else:
+##                            pass
+##                        reply = struct.pack("3iIii", 24, 0, time.time(), moving_RA, moving_DEC, 0)
+##                        for s in range(10):##Stellarium likes to recieve the coordinates 10 times.
+##                            i.send(reply)
                     
                 current_position[0]=data[3]
                 current_position[1]=data[4]

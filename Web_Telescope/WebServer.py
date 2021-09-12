@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template, url_for, request, jsonify
+from flask_autoindex import AutoIndex
 import datetime
 import RPi.GPIO as GPIO
 import serial
 import pandas
 import json
+import os
 app = Flask(__name__)
 
 GPIO.setmode(GPIO.BCM)
 chartSize=50
+AutoIndex(app,browse_root=os.path.curdir) 
 
 @app.route("/Telescope/RA_Pos/", methods = ['POST'])
 def Move_RA_Pos():
@@ -170,7 +173,10 @@ def StartStellarium():
       config = json.load(f)
       f.close()
    config["StateStellarium"]=start in ['true', '1']
-   config["State"]=False
+   if config["StateStellarium"]==True:
+      config["State"]=False
+   else:
+      config["State"]=True
    with open('Config.cfg', 'w') as outfile:
       json.dump(config, outfile)
       outfile.close()

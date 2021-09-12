@@ -17,7 +17,7 @@ UNITE_DEPLACEMENT = 49843#correspond a 15.04"arc
 DEPLACEMENT_SECONDS_DEC = UNITE_DEPLACEMENT * MOVE_SPEED
 DEPLACEMENT_SECONDS_RA_POS = UNITE_DEPLACEMENT * (MOVE_SPEED+1)#le ciel continue de bouger en meme temps
 DEPLACEMENT_SECONDS_RA_NEG = UNITE_DEPLACEMENT * (MOVE_SPEED-1)
-serial = serial.Serial("/dev/ttyS0",57600,timeout=2)#
+#serial = serial.Serial("/dev/ttyS0",57600,timeout=2)#
 # List of socket objects that are currently open
 open_sockets = []
 
@@ -211,9 +211,10 @@ while True:
         with open(config["FileName"], mode='w') as MesureFile:
             MesureFile = csv.writer(MesureFile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             MesureFile.writerow(['Temperature0', 'Temperature1', 'Temperature2', 'Temperature3', 'Temperature4',"Temperature_Rose",'Humidite',"Temps"])
-    elif (config["CreateNewFile"]==False)&(config["State"]==False):#Tout est arreter
+    elif (config["CreateNewFile"]==False)&(config["State"]==False)&(config["StateStellarium"]==False):
         time.sleep(0.5)
     elif (config["CreateNewFile"]==False)&(config["State"]==False)&(config["StateStellarium"]==True):#Tout est arreter
+        #print "LOL"
         # Waits for I/O being available for reading from any socket object.
         rlist, wlist, xlist = select.select( [listening_socket] + open_sockets, [], [] )
         for i in rlist:
@@ -252,8 +253,8 @@ while True:
                     #temps de deplacement en millisec
                     temps_dec=float(abs(deplacement_dec*1000)/DEPLACEMENT_SECONDS_DEC)
 
-                    print (temps_ra)
-                    print (temps_dec)
+                    #print (temps_ra)
+                    #print (temps_dec)
                     end_move_ra=0
                     end_move_dec=0
                     moving_RA=current_position[0]
