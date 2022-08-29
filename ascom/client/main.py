@@ -7,8 +7,11 @@ try:
     T.Connected = True
     print("ICI")
     print("is connected = "+str(T.Connected))
-    # print(f'Connected to {T.Name}')
-    # print(T.Description)
+    print(f'Connected to {T.Name}')
+    print(T.Description)
+    print(T.AlignmentMode)
+    print(T.Altitude)
+    print(T.DestinationSideOfPier(0,0))
     # T.Tracking = True               # Needed for slewing (see below)
     # print('Starting slew...')
     # T.SlewToCoordinatesAsync(T.SiderealTime + 2, 50)    # 2 hrs east of meridian

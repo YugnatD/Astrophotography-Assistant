@@ -122,8 +122,211 @@ class Telescope:
 ##
 ################################################################################
 
+##################################     SET    ##################################
+
 
 ## TODO
+
+##################################     GET    ##################################
+# algAltAz	0	Altitude-Azimuth alignment.
+# algPolar	1	Polar (equatorial) mount other than German equatorial.
+# algGermanPolar	2	German equatorial mount.
+    @router.get(DEFAULT_LINK+"alignmentmode")
+    async def GetAlignmentmode(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(1, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"altitude")
+    async def GetAltitude(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(46.09098, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"aperturearea")
+    async def Getaperturearea(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"aperturediameter")
+    async def Getaperturediameter(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"athome")
+    async def Getathome(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"atpark")
+    async def Getatpark(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"azimuth")
+    async def Getazimuth(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canfindhome")
+    async def Getcanfindhome(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canpark")
+    async def Getcanpark(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canpulseguide")
+    async def Getcanpulseguide(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansetdeclinationrate")
+    async def Getcansetdeclinationrate(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansetguiderates")
+    async def Getcansetguiderates(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansetpark")
+    async def Getcansetparks(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansetpierside")
+    async def Getcansetpierside(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansetrightascensionrate")
+    async def Getcansetrightascensionrate(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansettracking")
+    async def Getcansettracking(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canslew")
+    async def Getcanslew(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canslewaltaz")
+    async def Getcanslewaltaz(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canslewaltazasync")
+    async def Getcanslewaltazasync(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canslewasync")
+    async def Getcanslewasync(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansync")
+    async def Getcansync(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"cansyncaltaz")
+    async def Getcansyncaltaz(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canunpark")
+    async def Getcanunpark(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"declination")
+    async def Getdeclination(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"declinationrate")
+    async def Getdeclinationrate(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"doesrefraction")
+    async def Getdoesrefraction(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"equatorialsystem")
+    async def Getequatorialsystem(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(42, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"focallength")
+    async def Getfocallength(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(1000.42, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"guideratedeclination")
+    async def Getguideratedeclination(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0.5, ClientTransactionID)#warining deg/sec
+
+    @router.get(DEFAULT_LINK+"guideraterightascension")
+    async def Getguideraterightascension(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0.5, ClientTransactionID)#warining deg/sec
+
+    @router.get(DEFAULT_LINK+"ispulseguiding")
+    async def Getispulseguiding(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"rightascension")
+    async def Getrightascension(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0.42, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"rightascensionrate")
+    async def Getrightascensionrate(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0.42, ClientTransactionID) #The right ascension tracking rate (arcseconds per second, default = 0.0)
+
+    @router.get(DEFAULT_LINK+"sideofpier")
+    async def Getsideofpier(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(-1, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"siderealtime")
+    async def Getsiderealtime(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0.42, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"siteelevation")
+    async def Getsiteelevation(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(660.4, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"sitelatitude")
+    async def Getsitelatitude(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(660.4, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"sitelongitude")
+    async def Getsitelongitude(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(660.4, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"slewing")
+    async def Getslewing(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"slewsettletime")
+    async def Getslewsettletime(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(42, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"targetdeclination")
+    async def Gettargetdeclination(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"targetrightascension")
+    async def Gettargetrightascension(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(3.14, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"tracking")
+    async def Gettracking(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(False, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"trackingrate")
+    async def Gettrackingrate(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(0, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"trackingrates")
+    async def Gettrackingrates(self, ClientTransactionID: int, ClientID: int):
+        return self.returnValue([0,1,2], ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"utcdate")
+    async def Getutcdate(self, ClientTransactionID: int, ClientID: int):
+        # yyyy-MM-ddTHH:mm:ss.fffffffZ E.g. 2016-03-04T17:45:31.1234567Z or 2016-11-14T07:03:08.1234567Z
+        return self.returnValue("2016-11-14T07:03:08.1234567Z", ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"axisrates")
+    async def Getaxisrates(self, Axis: int, ClientTransactionID: int, ClientID: int):
+        return self.returnValue([100, 15], ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"canmoveaxis")
+    async def Getcanmoveaxis(self, Axis: int, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(True, ClientTransactionID)
+
+    @router.get(DEFAULT_LINK+"destinationsideofpier")
+    async def Getdestinationsideofpier(self, RightAscension: int, Declination: int, ClientTransactionID: int, ClientID: int):
+        return self.returnValue(-1, ClientTransactionID)
 
 
 ################################################################################
