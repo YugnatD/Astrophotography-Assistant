@@ -27,6 +27,6 @@ class Discovery:
             datatoSend = json.dumps(toSend)
             self.socketDisco.sendto(bytes(datatoSend, "utf-8"), (ip, port))
 
-
-# discovery = Discovery()
-# discovery.run()
+if __name__ == "__main__":
+    discovery = Discovery()
+    discovery.run()
