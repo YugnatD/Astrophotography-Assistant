@@ -96,7 +96,7 @@ class Telescope:
 ##################################     SET    ##################################
     @router.put(DEFAULT_LINK+"connected")
     async def setConnected(self, Connected: bool = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-        await cache.set("Connected", Connected)
+        await cache.set("connected", Connected)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"action")
@@ -122,7 +122,7 @@ class Telescope:
 ##################################     GET    ##################################
     @router.get(DEFAULT_LINK+"connected")
     async def Getconnected(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-        co = await cache.get("Connected", default=False)
+        co = await cache.get("connected", default=False)
         return self.returnValue(co, ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"name")
@@ -159,62 +159,77 @@ class Telescope:
 
     @router.put(DEFAULT_LINK+"declinationrate")
     async def setdeclinationrate(self, DeclinationRate: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("declinationrate", DeclinationRate)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"doesrefraction")
     async def setdoesrefraction(self, DoesRefraction: bool = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("doesrefraction", DoesRefraction)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"guideratedeclination")
     async def setguideratedeclination(self, GuideRateDeclination: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("guideratedeclination", GuideRateDeclination)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"guideraterightascension")
     async def setguideraterightascension(self, GuideRateRightAscension: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("guideraterightascension", GuideRateRightAscension)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"rightascensionrate")
     async def setrightascensionrate(self, RightAscensionRate: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("rightascensionrate", RightAscensionRate)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"sideofpier")
     async def setsideofpier(self, SideOfPier: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("sideofpier", SideOfPier)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"siteelevation")
     async def setsiteelevation(self, SiteElevation: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("siteelevation", SiteElevation)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"sitelatitude")
     async def setsitelatitude(self, SiteLatitude: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("sitelatitude", SiteLatitude)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"sitelongitude")
     async def setsitelongitude(self, SiteLongitude: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("sitelongitude", SiteLongitude)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewsettletime")
     async def setslewsettletime(self, SlewSettleTime: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("slewsettletime", SlewSettleTime)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"targetdeclination")
     async def settargetdeclination(self, TargetDeclination: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("targetdeclination", TargetDeclination)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"targetrightascension")
     async def settargetrightascension(self, TargetRightAscension: float = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("targetrightascension", TargetRightAscension)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"tracking")
     async def settracking(self, Tracking: bool = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("tracking", Tracking)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"trackingrate")
     async def settrackingrate(self, TrackingRate: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("trackingrate", TrackingRate)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"utcdate")
     async def setutcdate(self, UTCDate: str = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+        await cache.set("utcdate", UTCDate)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"abortslew")
@@ -231,54 +246,67 @@ class Telescope:
 
     @router.put(DEFAULT_LINK+"park")
     async def setpark(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"pulseguide")
     async def setpulseguide(self, Direction: int = Form(...), Duration: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"setpark")
     async def setsetpark(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtoaltaz")
     async def setslewtoaltaz(self, Azimuth: int = Form(...), Altitude: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtoaltazasync")
     async def setslewtoaltazasync(self, Azimuth: int = Form(...), Altitude: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtocoordinates")
     async def setslewtocoordinates(self, RightAscension: int = Form(...), Declination: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtocoordinatesasync")
     async def setslewtocoordinatesasync(self, RightAscension: int = Form(...), Declination: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtotarget")
     async def setslewtotarget(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"slewtotargetasync")
     async def setslewtotargetasync(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"synctoaltaz")
     async def setsynctoaltaz(self, Azimuth: int = Form(...), Altitude: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"synctocoordinates")
     async def setsynctocoordinates(self, RightAscension: int = Form(...), Declination: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"synctotarget")
     async def setsynctotarget(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"unpark")
     async def setunpark(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
+
         return self.returnValue("", ClientTransactionID)
 
 
@@ -385,7 +413,8 @@ class Telescope:
 
     @router.get(DEFAULT_LINK+"declinationrate")
     async def Getdeclinationrate(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-        return self.returnValue(3.14, ClientTransactionID)
+        declinationrate = await cache.get("declinationrate", default=0.0)
+        return self.returnValue(declinationrate, ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"doesrefraction")
     async def Getdoesrefraction(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
