@@ -6,6 +6,8 @@
 ################################################################################
 
 import uvicorn
+import yaml
+from yaml.loader import SafeLoader
 from fastapi import FastAPI, Form
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
@@ -13,7 +15,10 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from typing import Optional
 from aiocache import Cache
+import TelescopeUartDriver as UartScope
 import threading
+import asyncio
+# import ConfigTelescope
 # import Discovery
 import random
 
@@ -24,32 +29,51 @@ DEVICE_TYPE = "telescope"
 DEVICE_NUMBER = "0"
 DEFAULT_LINK = "/"+API_NAME+"/"+API_VERSION+"/"+DEVICE_TYPE+"/"+DEVICE_NUMBER+"/"
 
-MANUFACTURER = "Tanguy Dietrich"
-MANUFACTURER_VERSION = "V1.0"
-LOCATION = "Sur terre"
-UUID = "42424242"
-
-
 cache = Cache()
 app = FastAPI()
 router = InferringRouter()
+uartscope = UartScope.TelescopeUartDriver()
 
 
 @cbv(router)
 class Telescope:
-    def __init__(self, ip="", port=11111, deviceNumber=0, name="Astrophotography Assistant", descriptions="blabla", driverinfo="", driverversion="", interfaceversion="", supportedactions=[""]):
+    def __init__(self, ip="", port=11111):
         # WARNING EVERYTHING HERE IS READ ONLY AFTER RUN
         self.ip = ip
-        self.deviceNumber = deviceNumber
+        self.deviceNumber = 0
         self.port = port
-        self.name = name
-        self.descriptions = descriptions
-        self.driverinfo = driverinfo
-        self.driverversion = driverversion
-        self.interfaceversion = interfaceversion
-        self.supportedactions = supportedactions
+        self.name = ""
+        self.descriptions = ""
+        self.driverinfo = ""
+        self.driverversion = ""
+        self.interfaceversion = ""
+        self.supportedactions = [""]
+        self.manufacturer = ""
+        self.manufacturer_version = ""
+        self.location = ""
+        self.UUID = ""
+        asyncio.run(self.loadYamlToCache("ScopeConfig.yaml"))
+
         # TODO FIX THIS -> deviceNumber not the good value
         #DEFAULT_LINK = "/"+API_NAME+"/"+API_VERSION+"/"+DEVICE_TYPE+"/"+str(deviceNumber)+"/"
+
+    async def loadYamlToCache(self, yamlfile):
+        with open(yamlfile) as f:
+            data = yaml.load(f, Loader=SafeLoader)
+        #loading description of mount
+        self.name = data["name"]
+        self.descriptions = data["descriptions"]
+        self.driverinfo = data["driverinfo"]
+        self.driverversion = data["driverversion"]
+        self.interfaceversion = data["interfaceversion"]
+        self.supportedactions = data["supportedactions"]
+        self.manufacturer = data["manufacturer"]
+        self.manufacturer_version = data["manufacturer_version"]
+        self.location = data["location"]
+        self.UUID = data["UUID"]
+        #Loading the configuration in cache
+        for key in data["configuration"].keys():
+            await cache.set(key, data["configuration"][key])
 
     def returnValue(self, Value, ClientTransactionID, ErrorNumber=0, ErrorMessage=""):
         ServerTransID = random.randint(0,4294967295)
@@ -78,12 +102,12 @@ class Telescope:
 
     @router.get("/management/"+API_VERSION+"/description")
     async def GetManagementDescription(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-        Value = {"ServerName": self.name, "Manufacturer": MANUFACTURER, "ManufacturerVersion": MANUFACTURER_VERSION, "Location": LOCATION}
+        Value = {"ServerName": self.name, "Manufacturer": self.manufacturer, "ManufacturerVersion": self.manufacturer_version, "Location": self.location}
         return self.returnValue(Value, ClientTransactionID)
 
     @router.get("/management/"+API_VERSION+"/configureddevices")
     async def GetConfiguredDevices(self, ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-        Value = [{"DeviceName": self.name, "DeviceType": DEVICE_TYPE, "DeviceNumber": int(DEVICE_NUMBER), "UniqueID": UUID}]
+        Value = [{"DeviceName": self.name, "DeviceType": DEVICE_TYPE, "DeviceNumber": int(DEVICE_NUMBER), "UniqueID": self.uuid}]
         return self.returnValue(Value, ClientTransactionID)
 
 ################################################################################
@@ -251,7 +275,7 @@ class Telescope:
 
     @router.put(DEFAULT_LINK+"pulseguide")
     async def setpulseguide(self, Direction: int = Form(...), Duration: int = Form(...), ClientID: Optional[int] = Form(None), ClientTransactionID: Optional[int] = Form(None)):
-
+        uartscope.asyncPulse(pulseTime=Duration/1000, pulserate=15.04, direction = Direction)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"setpark")

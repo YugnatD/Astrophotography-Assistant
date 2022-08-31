@@ -1,0 +1,60 @@
+name: 'Astrophotography Assistant'
+descriptions: 'Ascom Alpaca interface to control my technician diploma project'
+manufacturer: 'Tanguy Dietrich'
+manufacturer_version: "V1.0"
+location: "Earth"
+UUID: '424242424242'
+driverinfo: "Simple driver to interface my techniciant diploma project"
+driverversion: "V1.0"
+interfaceversion: "V1.0"
+supportedactions: ['', '']
+configuration:
+    alignmentmode: 1
+    altitude: 46.09098
+    aperturearea: 3.14
+    aperturediameter: 3.14
+    athome: False
+    atpark: False
+    azimuth: 3.14
+    canfindhome: False
+    canpark: False
+    canpulseguide: True
+    cansetdeclinationrate: True
+    cansetguiderates: True
+    cansetpark: False
+    cansetpierside: False
+    cansetrightascensionrate: True
+    cansettracking: True
+    canslew: False
+    canslewaltaz: False
+    canslewaltazasync: False
+    canslewasync: False
+    cansync: False
+    cansyncaltaz: False
+    canunpark: False
+    declination: False
+    declinationrate: 15.04
+    doesrefraction: False
+    equatorialsystem: 42
+    focallength: 1000.0
+    guideratedeclination: 0.5
+    guideraterightascension: 0.5
+    ispulseguiding: False
+    rightascension: 0.42
+    rightascensionrate: 0.42
+    sideofpier: -1
+    siderealtime: 0.42
+    siteelevation: 661.4
+    sitelatitude: 660.4
+    sitelongitude: 42.5
+    slewing: False
+    slewsettletime: 42
+    targetdeclination: 0.0
+    targetrightascension: 0.0
+    tracking: False
+    trackingrate: 0
+    trackingrates: [0,1,2]
+    utcdate: "2016-11-14T07:03:08.1234567Z"
+    axisrates: [100, 15]
+    canmoveaxis: True
+    destinationsideofpier: -1
