@@ -25,11 +25,11 @@ configuration:
     cansetpierside: False
     cansetrightascensionrate: True
     cansettracking: True
-    canslew: False
+    canslew: True
     canslewaltaz: False
     canslewaltazasync: False
     canslewasync: False
-    cansync: False
+    cansync: True
     cansyncaltaz: False
     canunpark: False
     declination: 0.0
@@ -40,7 +40,7 @@ configuration:
     guideratedeclination: 0.5
     guideraterightascension: 0.5
     ispulseguiding: False
-    rightascension: 0.42
+    rightascension: 13.0
     rightascensionrate: 0.42
     sideofpier: -1
     siderealtime: 0.42
@@ -51,7 +51,7 @@ configuration:
     slewsettletime: 42
     targetdeclination: 0.0
     targetrightascension: 0.0
-    tracking: False
+    tracking: True
     trackingrate: 0
     trackingrates: [0,1,2]
     utcdate: "2016-11-14T07:03:08.1234567Z"

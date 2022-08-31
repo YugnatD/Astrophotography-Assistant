@@ -18,6 +18,7 @@ from aiocache import Cache
 import TelescopeUartDriver as UartScope
 import threading
 import asyncio
+import requests
 # import ConfigTelescope
 # import Discovery
 import random
@@ -29,7 +30,7 @@ DEVICE_TYPE = "telescope"
 DEVICE_NUMBER = "0"
 DEFAULT_LINK = "/"+API_NAME+"/"+API_VERSION+"/"+DEVICE_TYPE+"/"+DEVICE_NUMBER+"/"
 
-cache = Cache()
+cache = Cache(Cache.MEMORY, namespace="main") ## to make a shared memory between the worker
 app = FastAPI()
 router = InferringRouter()
 uartscope = UartScope.TelescopeUartDriver()
@@ -39,9 +40,10 @@ uartscope = UartScope.TelescopeUartDriver()
 class Telescope:
     def __init__(self, ip="", port=11111):
         # WARNING EVERYTHING HERE IS READ ONLY AFTER RUN
+        ##these value are only here for definition, use the yaml to reconfigure
         self.ip = ip
-        self.deviceNumber = 0
         self.port = port
+        self.deviceNumber = 0
         self.name = ""
         self.descriptions = ""
         self.driverinfo = ""
@@ -52,12 +54,10 @@ class Telescope:
         self.manufacturer_version = ""
         self.location = ""
         self.UUID = ""
-        asyncio.run(self.loadYamlToCache("ScopeConfig.yaml"))
+        self.defaultConfigDict = {}
+        self.loadYamlToCache("ScopeConfig.yaml")
 
-        # TODO FIX THIS -> deviceNumber not the good value
-        #DEFAULT_LINK = "/"+API_NAME+"/"+API_VERSION+"/"+DEVICE_TYPE+"/"+str(deviceNumber)+"/"
-
-    async def loadYamlToCache(self, yamlfile):
+    def loadYamlToCache(self, yamlfile):
         with open(yamlfile) as f:
             data = yaml.load(f, Loader=SafeLoader)
         #loading description of mount
@@ -73,7 +73,7 @@ class Telescope:
         self.UUID = data["UUID"]
         #Loading the configuration in cache
         for key in data["configuration"].keys():
-            await cache.set(key, data["configuration"][key])
+            self.defaultConfigDict[key] = data["configuration"][key]
 
     def returnValue(self, Value, ClientTransactionID, ErrorNumber=0, ErrorMessage=""):
         ServerTransID = random.randint(0,4294967295)
@@ -320,8 +320,9 @@ class Telescope:
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"synctocoordinates")
-    async def setsynctocoordinates(self, RightAscension: int = Form(...), Declination: int = Form(...), ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-
+    async def setsynctocoordinates(self, RightAscension: float = Form(...), Declination: float = Form(...), ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
+        await cache.set("declination", Declination)
+        await cache.set("rightascension", RightAscension)
         return self.returnValue("", ClientTransactionID)
 
     @router.put(DEFAULT_LINK+"synctotarget")
@@ -342,201 +343,202 @@ class Telescope:
 # algGermanPolar	2	German equatorial mount.
     @router.get(DEFAULT_LINK+"alignmentmode")
     async def GetAlignmentmode(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("alignmentmode", default=1), ClientTransactionID)
+        return self.returnValue(await cache.get("alignmentmode", default=self.defaultConfigDict["alignmentmode"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"altitude")
     async def GetAltitude(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("altitude", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("altitude", default=self.defaultConfigDict["altitude"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"aperturearea")
     async def Getaperturearea(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("aperturearea", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("aperturearea", default=self.defaultConfigDict["aperturearea"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"aperturediameter")
     async def Getaperturediameter(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("aperturediameter", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("aperturediameter", default=self.defaultConfigDict["aperturediameter"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"athome")
     async def Getathome(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("athome", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("athome", default=self.defaultConfigDict["athome"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"atpark")
     async def Getatpark(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("atpark", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("atpark", default=self.defaultConfigDict["atpark"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"azimuth")
     async def Getazimuth(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("azimuth", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("azimuth", default=self.defaultConfigDict["azimuth"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canfindhome")
     async def Getcanfindhome(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canfindhome", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canfindhome", default=self.defaultConfigDict["canfindhome"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canpark")
     async def Getcanpark(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canpark", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canpark", default=self.defaultConfigDict["canpark"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canpulseguide")
     async def Getcanpulseguide(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canpulseguide", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("canpulseguide", default=self.defaultConfigDict["canpulseguide"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansetdeclinationrate")
     async def Getcansetdeclinationrate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansetdeclinationrate", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("cansetdeclinationrate", default=self.defaultConfigDict["cansetdeclinationrate"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansetguiderates")
     async def Getcansetguiderates(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansetguiderates", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("cansetguiderates", default=self.defaultConfigDict["cansetguiderates"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansetpark")
     async def Getcansetparks(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansetpark", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("cansetpark", default=self.defaultConfigDict["cansetpark"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansetpierside")
     async def Getcansetpierside(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansetpierside", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("cansetpierside", default=self.defaultConfigDict["cansetpierside"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansetrightascensionrate")
     async def Getcansetrightascensionrate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansetrightascensionrate", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("cansetrightascensionrate", default=self.defaultConfigDict["cansetrightascensionrate"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansettracking")
     async def Getcansettracking(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansettracking", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("cansettracking", default=self.defaultConfigDict["cansettracking"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canslew")
     async def Getcanslew(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canslew", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canslew", default=self.defaultConfigDict["canslew"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canslewaltaz")
     async def Getcanslewaltaz(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canslewaltaz", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canslewaltaz", default=self.defaultConfigDict["canslewaltaz"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canslewaltazasync")
     async def Getcanslewaltazasync(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canslewaltazasync", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canslewaltazasync", default=self.defaultConfigDict["canslewaltazasync"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canslewasync")
     async def Getcanslewasync(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canslewasync", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canslewasync", default=self.defaultConfigDict["canslewasync"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansync")
     async def Getcansync(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansync", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("cansync", default=self.defaultConfigDict["cansync"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"cansyncaltaz")
     async def Getcansyncaltaz(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("cansyncaltaz", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("cansyncaltaz", default=self.defaultConfigDict["cansyncaltaz"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canunpark")
     async def Getcanunpark(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canunpark", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("canunpark", default=self.defaultConfigDict["canunpark"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"declination")
     async def Getdeclination(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("declination", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("declination", default=self.defaultConfigDict["declination"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"declinationrate")
     async def Getdeclinationrate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        declinationrate = await cache.get("declinationrate", default=0.0)
+        declinationrate = await cache.get("declinationrate", default=self.defaultConfigDict["declinationrate"])
         return self.returnValue(declinationrate, ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"doesrefraction")
     async def Getdoesrefraction(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("doesrefraction", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("doesrefraction", default=self.defaultConfigDict["doesrefraction"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"equatorialsystem")
     async def Getequatorialsystem(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("equatorialsystem", default=0), ClientTransactionID)
+        return self.returnValue(await cache.get("equatorialsystem", default=self.defaultConfigDict["equatorialsystem"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"focallength")
     async def Getfocallength(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("focallength", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("focallength", default=self.defaultConfigDict["focallength"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"guideratedeclination")
     async def Getguideratedeclination(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("guideratedeclination", default=0.0), ClientTransactionID)#warining deg/sec
+        return self.returnValue(await cache.get("guideratedeclination", default=self.defaultConfigDict["guideratedeclination"]), ClientTransactionID)#warining deg/sec
 
     @router.get(DEFAULT_LINK+"guideraterightascension")
     async def Getguideraterightascension(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("guideraterightascension", default=0.0), ClientTransactionID)#warining deg/sec
+        return self.returnValue(await cache.get("guideraterightascension", default=self.defaultConfigDict["guideraterightascension"]), ClientTransactionID)#warining deg/sec
 
     @router.get(DEFAULT_LINK+"ispulseguiding")
     async def Getispulseguiding(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("ispulseguiding", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("ispulseguiding", default=self.defaultConfigDict["ispulseguiding"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"rightascension")
     async def Getrightascension(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("rightascension", default=0.0), ClientTransactionID)
+        ra = await cache.get("rightascension", default=self.defaultConfigDict["rightascension"])
+        return self.returnValue(ra, ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"rightascensionrate")
     async def Getrightascensionrate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("rightascensionrate", default=0.0), ClientTransactionID) #The right ascension tracking rate (arcseconds per second, default = 0.0)
+        return self.returnValue(await cache.get("rightascensionrate", default=self.defaultConfigDict["rightascensionrate"]), ClientTransactionID) #The right ascension tracking rate (arcseconds per second, default = 0.0)
 
     @router.get(DEFAULT_LINK+"sideofpier")
     async def Getsideofpier(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("sideofpier", default=-1), ClientTransactionID)
+        return self.returnValue(await cache.get("sideofpier", default=self.defaultConfigDict["sideofpier"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"siderealtime")
     async def Getsiderealtime(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("siderealtime", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("siderealtime", default=self.defaultConfigDict["siderealtime"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"siteelevation")
     async def Getsiteelevation(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("siteelevation", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("siteelevation", default=self.defaultConfigDict["siteelevation"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"sitelatitude")
     async def Getsitelatitude(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("sitelatitude", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("sitelatitude", default=self.defaultConfigDict["sitelatitude"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"sitelongitude")
     async def Getsitelongitude(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("sitelongitude", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("sitelongitude", default=self.defaultConfigDict["sitelongitude"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"slewing")
     async def Getslewing(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("slewing", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("slewing", default=self.defaultConfigDict["slewing"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"slewsettletime")
     async def Getslewsettletime(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("slewsettletime", default=0), ClientTransactionID)
+        return self.returnValue(await cache.get("slewsettletime", default=self.defaultConfigDict["slewsettletime"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"targetdeclination")
     async def Gettargetdeclination(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("targetdeclination", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("targetdeclination", default=self.defaultConfigDict["targetdeclination"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"targetrightascension")
     async def Gettargetrightascension(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("targetrightascension", default=0.0), ClientTransactionID)
+        return self.returnValue(await cache.get("targetrightascension", default=self.defaultConfigDict["targetrightascension"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"tracking")
     async def Gettracking(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("tracking", default=False), ClientTransactionID)
+        return self.returnValue(await cache.get("tracking", default=self.defaultConfigDict["tracking"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"trackingrate")
     async def Gettrackingrate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("trackingrate", default=0), ClientTransactionID)
+        return self.returnValue(await cache.get("trackingrate", default=self.defaultConfigDict["trackingrate"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"trackingrates")
     async def Gettrackingrates(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("trackingrates", default=[0,1,2]), ClientTransactionID)
+        return self.returnValue(await cache.get("trackingrates", default=self.defaultConfigDict["trackingrates"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"utcdate")
     async def Getutcdate(self, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
         # yyyy-MM-ddTHH:mm:ss.fffffffZ E.g. 2016-03-04T17:45:31.1234567Z or 2016-11-14T07:03:08.1234567Z
-        return self.returnValue(await cache.get("utcdate", default="2016-11-14T07:03:08.1234567Z"), ClientTransactionID)
+        return self.returnValue(await cache.get("utcdate", default=self.defaultConfigDict["utcdate"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"axisrates")
     async def Getaxisrates(self, Axis: int, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("axisrates", default=[100, 15]), ClientTransactionID)
+        return self.returnValue(await cache.get("axisrates", default=self.defaultConfigDict["axisrates"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"canmoveaxis")
     async def Getcanmoveaxis(self, Axis: int, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("canmoveaxis", default=True), ClientTransactionID)
+        return self.returnValue(await cache.get("canmoveaxis", default=self.defaultConfigDict["canmoveaxis"]), ClientTransactionID)
 
     @router.get(DEFAULT_LINK+"destinationsideofpier")
     async def Getdestinationsideofpier(self, RightAscension: int, Declination: int, ClientID: Optional[int] = Form(0), ClientTransactionID: Optional[int] = Form(0)):
-        return self.returnValue(await cache.get("destinationsideofpier", default=-1), ClientTransactionID)
+        return self.returnValue(await cache.get("destinationsideofpier", default=self.defaultConfigDict["destinationsideofpier"]), ClientTransactionID)
 
 
 ################################################################################

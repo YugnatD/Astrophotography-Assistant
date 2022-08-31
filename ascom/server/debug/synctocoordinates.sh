@@ -1,0 +1,1 @@
+curl -X PUT "http://127.0.0.1:11111/api/v1/telescope/0/synctocoordinates" -H "accept: application/json" -H "Content-Type: application/x-www-form-urlencoded" -d "RightAscension=10.0&Declination=8.0&ClientID=&ClientTransactionID="
