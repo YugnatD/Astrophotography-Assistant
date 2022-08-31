@@ -1,12 +1,12 @@
 name: 'Astrophotography Assistant'
 descriptions: 'Ascom Alpaca interface to control my technician diploma project'
 manufacturer: 'Tanguy Dietrich'
-manufacturer_version: "V1.0"
+manufacturer_version: "1"
 location: "Earth"
 UUID: '424242424242'
-driverinfo: "Simple driver to interface my techniciant diploma project"
-driverversion: "V1.0"
-interfaceversion: "V1.0"
+driverinfo: "Simple driver to interface my technician diploma project"
+driverversion: "1"
+interfaceversion: "1"
 supportedactions: ['', '']
 configuration:
     alignmentmode: 1
@@ -32,10 +32,10 @@ configuration:
     cansync: False
     cansyncaltaz: False
     canunpark: False
-    declination: False
+    declination: 0.0
     declinationrate: 15.04
     doesrefraction: False
-    equatorialsystem: 42
+    equatorialsystem: 0
     focallength: 1000.0
     guideratedeclination: 0.5
     guideraterightascension: 0.5
